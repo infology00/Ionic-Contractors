@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Ionic Contractors">
+  <rect width="64" height="64" rx="12" fill="#0c2237"/>
+  <path d="M32 6 L54 14 v18c0 12.5-8.6 21.6-22 26C18.6 53.6 10 44.5 10 32V14z" fill="none" stroke="#d9a441" stroke-width="2" opacity=".55"/>
+  <!-- Ionic column: volute capital, fluted shaft, stepped base -->
+  <path d="M22 22h20" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="24.5" cy="26.5" r="3.2" fill="none" stroke="#d9a441" stroke-width="2.4"/>
+  <circle cx="39.5" cy="26.5" r="3.2" fill="none" stroke="#d9a441" stroke-width="2.4"/>
+  <rect x="28.5" y="26" width="7" height="16" fill="#ffffff"/>
+  <path d="M32 26v16" stroke="#0c2237" stroke-width="1.2"/>
+  <path d="M21 46h22" stroke="#ffffff" stroke-width="3" stroke-linecap="round"/>
+  <path d="M19 51h26" stroke="#d9a441" stroke-width="3" stroke-linecap="round"/>
+</svg>

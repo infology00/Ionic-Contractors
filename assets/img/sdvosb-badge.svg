@@ -1,0 +1,15 @@
+<!--
+  PLACEHOLDER BADGE — Ionic-branded, not an official government seal.
+  Replace with the official SDVOSB / SBA VetCert seal artwork supplied by the
+  client (drop the file in as assets/img/sdvosb-seal.svg or .png and update the
+  <img src> in each template). Do not ship this placeholder as if it were the
+  certifying agency's mark.
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Service-Disabled Veteran-Owned Small Business certified">
+  <circle cx="60" cy="60" r="58" fill="#0c2237" stroke="#d9a441" stroke-width="3"/>
+  <circle cx="60" cy="60" r="46" fill="none" stroke="#d9a441" stroke-width="1.2" opacity=".7"/>
+  <path d="M60 34l5.6 11.3 12.5 1.8-9 8.8 2.1 12.4L60 62.5 48.8 68.3l2.1-12.4-9-8.8 12.5-1.8z" fill="#d9a441"/>
+  <text x="60" y="84" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="13" font-weight="bold" fill="#ffffff" letter-spacing="1.5">SDVOSB</text>
+  <text x="60" y="96" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="7.5" font-weight="bold" fill="#c3d3e2" letter-spacing="0.6">VETERAN-OWNED</text>
+  <text x="60" y="105" text-anchor="middle" font-family="Helvetica, Arial, sans-serif" font-size="7.5" font-weight="bold" fill="#c3d3e2" letter-spacing="0.6">SMALL BUSINESS</text>
+</svg>
