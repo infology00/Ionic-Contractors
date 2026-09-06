@@ -1,0 +1,190 @@
+===============================================================================
+OPEN ITEMS — IONIC CONTRACTORS LLC WEBSITE
+What is still needed before this site can launch
+===============================================================================
+
+Everything below is either content the client still owes or a task deferred
+to the dev working session.
+
+Every item that appears on a page is also flagged THERE, with a dashed amber
+"Needs input" badge, so placeholder content cannot ship silently as fact.
+Running "node build/build.mjs" prints a per-page count of those flags.
+
+
+-------------------------------------------------------------------------------
+1. CLIENT INPUTS STILL NEEDED
+-------------------------------------------------------------------------------
+
+[ ] CAPABILITY STATEMENT PDF          — blocking the gated download
+    Page: capability-statement.html
+
+    The gate is built and the four-field qualifying form works, but there is
+    no document to deliver. Requests currently route to
+    service@ionic.contractors for a manual reply.
+
+    To finish: put the PDF in assets/, then wire the success handler in
+    source/js/app.js (showSuccess) to trigger the download, and rebuild.
+
+    NOTE: this document — not the public site — is where the principals'
+    operator experience and past performance appear. The About page says so
+    explicitly and links to the gate. That was a deliberate strategic choice
+    in the brief; do not move that content onto the public pages.
+
+    ACCESSIBILITY: the PDF must itself be checked (tagged structure, reading
+    order, alt text) before it is offered, since the site makes a Section 508
+    conformance claim.
+
+
+[ ] FOUNDING NARRATIVE AND MISSION WORDING
+    Page: about.html
+
+    The brief's draft wording is in place verbatim. Confirm or adjust it —
+    particularly any claim about when and why the company was formed, which
+    is exactly the kind of detail that should not be guessed at.
+
+
+[ ] NAICS CODE FOR LOGISTICS / COMMODITY SOURCING
+    Pages: capabilities.html (matrix), federal-contracting.html
+
+    Every other capability line has a code. Logistics and commodity sourcing
+    currently renders as "Confirm NAICS".
+
+    To finish: add the code in build/site.mjs -> capabilities -> the
+    'logistics' entry, and remove its naicsPending flag.
+
+    Also confirm the rest of the capability-to-NAICS mapping is how you want
+    to be found — this is the table contracting officers scan first.
+
+
+[ ] SUBCONTRACTOR REGISTRATION FIELDS
+    Page: subcontractor-registration.html
+
+    The form captures the field set specified in the brief. Confirm the list
+    of business certifications, and decide whether licence number, bonding
+    capacity and references should be required rather than optional.
+
+
+[ ] SDVOSB SEAL ARTWORK
+    Pages: index.html (hero + trust bar), about.html
+
+    The brief says the seal is supplied separately, so the site renders a
+    clearly-labelled placeholder rather than an invented certification mark.
+
+    To finish: replace sealSlot() in build/components.mjs with the real
+    artwork and remove the flag.
+
+
+[ ] LEGAL TEXT — NOT DRAFTED, NOT REVIEWED
+    Pages: privacy-policy.html, terms-of-use.html, accessibility-statement.html
+
+    These ship as structural templates with [Placeholder] markers, not as
+    legal text. THEY ARE NOT ACCURATE OR ENFORCEABLE AS WRITTEN and must be
+    replaced with counsel-approved copy before launch.
+
+    Points that need a decision, not just drafting:
+
+      - Which processors actually handle submitted data (email, CRM, host,
+        analytics). The privacy policy cannot be accurate until the dev
+        working session settles this.
+      - Retention period for enquiries and subcontractor registrations.
+      - Governing law and venue. Ionic Contractors LLC is a North Carolina
+        entity under Ionic Group LLC, a Wyoming holding company — counsel
+        should confirm which applies.
+      - The formal accessibility conformance claim and evaluation date. The
+        measures listed on that page are accurate as built; the formal claim
+        itself has not been made.
+
+
+-------------------------------------------------------------------------------
+2. DEFERRED TO THE DEV WORKING SESSION
+-------------------------------------------------------------------------------
+
+[ ] LEAD CAPTURE AND CRM ROUTING (dual path)
+
+    Five forms are built, validated, and tagged by lead type:
+    contracting_officer, teaming_prime, subcontractor, capability_statement,
+    general_contact.
+
+    No endpoint is connected. Every form currently hands a pre-filled message
+    to the visitor's email application and says so on the page —
+    deliberately, so that nothing silently no-ops.
+
+    To connect: set data-endpoint on the form in formShell()
+    (build/components.mjs). app.js will POST to it and fall back to mailto:
+    only if the request fails.
+
+    FILE UPLOADS on the subcontractor form need a real backend — mailto:
+    cannot carry attachments. The form currently lists the chosen filenames
+    and asks the sender to attach them.
+
+
+[ ] GA4 AND SEARCH CONSOLE
+
+    Both are NOT installed. build/site.mjs has ga4Id: null and
+    searchConsoleToken: null, and the layout emits a comment instead of a
+    tag. This is on purpose — shipping a fabricated measurement ID would
+    look installed while sending data nowhere.
+
+    Set both values and rebuild. The GA4 snippet and the verification meta
+    tag then appear on every page.
+
+    window.dataLayer already exists and already receives a lead_submit event
+    carrying lead_type on every submission, so conversion tracking that
+    splits CO from teaming leads works the moment the ID is in.
+
+
+[ ] CONFIRM THE PRODUCTION DOMAIN
+
+    build/site.mjs -> site.origin is https://ionic.contractors and drives
+    every canonical, every Open Graph url and every sitemap entry. If the
+    site is deployed anywhere else, change it and rebuild — otherwise the
+    canonicals will point at a domain that is not serving the site.
+
+    Then submit sitemap.xml in Search Console.
+
+
+[ ] CACHE HEADERS ON THE CHOSEN HOST
+
+    _headers is read natively by Netlify and Cloudflare Pages. On any other
+    host it does nothing. Translate it into that host's configuration or the
+    caching benefit is lost.
+
+
+[ ] SOCIAL SHARE IMAGE (optional)
+
+    assets/img/og-default.jpg is currently a frame pulled from the brand
+    footage. Replace it if a branded card with the seal and wordmark is
+    wanted.
+
+
+-------------------------------------------------------------------------------
+3. VERIFIED AS BUILT — no need to re-test from scratch
+-------------------------------------------------------------------------------
+
+  - 12 pages build clean. No broken internal links, no root-absolute paths,
+    no missing alt text, no missing width/height, no unresolved template
+    tokens, no unlabelled form controls.
+  - No horizontal scrolling at 320, 375, 768, 1280 or 1440 pixels.
+  - Exactly one <h1> per page; unique title and meta description on each.
+  - Every path is relative, so the site opens from disk and can be deployed
+    into a subfolder.
+  - Scroll-scrub confirmed driving video.currentTime on both film stages.
+  - Beat cross-fades never drop below 50% combined visibility — there is no
+    blank frame between beats.
+  - Faded-out beats are inert from the first render; confirmed by attempting
+    to focus a link inside a hidden beat and being refused.
+  - The opening beat ships at rest in the markup, so the hero is correct even
+    before the first animation frame.
+  - Mobile drawer: opens, traps focus, Escape closes, focus restored, page
+    scroll locked and released.
+  - Accordion: aria-expanded toggles, panel hidden on collapse, with a timer
+    fallback so it cannot get stuck in the tab order.
+  - Form validation: required fields, email format, phone length, inline
+    errors, focus moved to the first bad field, live-region announcement.
+  - A successful submit composes the mailto: and pushes the analytics event.
+  - Static rendering (JS off / reduced motion) shows every beat in normal
+    flow over the poster still — no hidden content, nothing left inert.
+  - Zero console errors; zero failed resource loads across all pages.
+
+
+===============================================================================

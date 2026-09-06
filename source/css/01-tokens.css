@@ -1,0 +1,151 @@
+/* ==================================================================
+   IONIC CONTRACTORS — DESIGN TOKENS
+   The single place colour, type, spacing and motion are defined.
+   Every component below pulls from these custom properties; changing
+   the palette is a one-block edit in this file.
+   ------------------------------------------------------------------
+   Palette is drawn from the brand footage: near-black interiors with
+   a green undertone, warm brass practical lighting, deep service
+   green. Brass reads as the veteran/decoration accent; green as the
+   institutional secondary.
+================================================================== */
+
+:root {
+  /* ---- Surfaces ------------------------------------------------ */
+  --c-void:        #040807;
+  --c-base:        #080D0C;
+  --c-surface:     #0E1514;
+  --c-surface-2:   #141D1B;
+  --c-surface-3:   #1B2523;
+  --c-bone:        #F3F0E9;
+
+  /* ---- Lines --------------------------------------------------- */
+  --c-line:        rgb(243 240 233 / 9%);
+  --c-line-mid:    rgb(243 240 233 / 15%);
+  --c-line-strong: rgb(243 240 233 / 26%);
+
+  /* ---- Accent (verdigris / signal teal) ------------------------
+     Sits complementary to the warm practical lighting in the brand
+     footage, which is what gives the film its cinematic contrast.
+     Change these five values and the whole site re-skins.          */
+  --c-accent-rgb:    47 196 172;
+  --c-accent:        rgb(var(--c-accent-rgb));
+  --c-accent-bright: #7FE9D6;
+  --c-accent-deep:   #0A6E5E;              /* AA on the bone panel */
+  --c-accent-ink:    #032A24;              /* text on accent fills */
+  --c-accent-wash:   rgb(var(--c-accent-rgb) / 12%);
+  --c-accent-soft:   rgb(var(--c-accent-rgb) / 8%);
+  --c-accent-line:   rgb(var(--c-accent-rgb) / 34%);
+  --c-accent-glow:   rgb(var(--c-accent-rgb) / 55%);
+  --c-accent-ring:   rgb(var(--c-accent-rgb) / 18%);
+
+  /* Film-grade tints, used in the stage and section gradients */
+  --c-accent-tint-8:  rgb(var(--c-accent-rgb) / 8%);
+  --c-accent-tint-11: rgb(var(--c-accent-rgb) / 11%);
+  --c-accent-tint-13: rgb(var(--c-accent-rgb) / 13%);
+  --c-accent-tint-15: rgb(var(--c-accent-rgb) / 15%);
+
+  /* ---- Secondary (steel blue) ----------------------------------- */
+  --c-secondary-rgb:    108 147 214;
+  --c-secondary:        rgb(var(--c-secondary-rgb));
+  --c-secondary-bright: #9DBCEC;
+  --c-secondary-wash:   rgb(var(--c-secondary-rgb) / 14%);
+  --c-secondary-line:   rgb(var(--c-secondary-rgb) / 40%);
+  --c-secondary-tint-8: rgb(var(--c-secondary-rgb) / 8%);
+  --c-secondary-tint-10: rgb(var(--c-secondary-rgb) / 10%);
+  --c-secondary-tint-14: rgb(var(--c-secondary-rgb) / 14%);
+
+  /* Select-menu chevron. A data URI cannot read a custom property,
+     so the one literal copy of the accent lives here with the rest
+     of the palette rather than buried in the form styles. */
+  --select-arrow: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9' fill='none'%3E%3Cpath d='M1 1.5 7 7.5l6-6' stroke='%232FC4AC' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+
+  /* ---- Text ---------------------------------------------------- */
+  --c-text:    #EFECE5;
+  --c-text-2:  #B7BCB8;
+  --c-text-3:  #8A938F;
+  --c-on-bone:    #101716;
+  --c-on-bone-2:  #46514E;
+
+  /* ---- "Needs input" flag (client content still owed) ---------- */
+  --c-flag:      #E7B449;
+  --c-flag-text: #F5D089;
+  --c-flag-wash: rgb(231 180 73 / 8%);
+
+  /* ---- Status -------------------------------------------------- */
+  --c-error:   #FF8A7A;
+  --c-success: #7ED9B8;
+
+  /* ---- Focus --------------------------------------------------- */
+  --c-focus: #9BF3E2;
+
+  /* ---- Typefaces ----------------------------------------------- */
+  --font-display: 'Instrument Serif', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
+  --font-sans:    'Public Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono:    'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+
+  /* ---- Fluid type scale ---------------------------------------- */
+  --t-2xs:  0.6875rem;
+  --t-xs:   0.75rem;
+  --t-sm:   0.8125rem;
+  --t-base: clamp(1rem, 0.97rem + 0.14vw, 1.0625rem);
+  --t-md:   clamp(1.0625rem, 1.01rem + 0.26vw, 1.1875rem);
+  --t-lg:   clamp(1.1875rem, 1.11rem + 0.38vw, 1.375rem);
+  --t-xl:   clamp(1.375rem, 1.25rem + 0.6vw, 1.75rem);
+  --t-2xl:  clamp(1.625rem, 1.4rem + 1.1vw, 2.375rem);
+  --t-3xl:  clamp(2rem, 1.6rem + 1.9vw, 3.25rem);
+  --t-4xl:  clamp(2.5rem, 1.85rem + 3.1vw, 4.5rem);
+  --t-hero: clamp(2.75rem, 1.6rem + 5vw, 6rem);
+
+  /* Lead paragraph / body measure */
+  --measure:      68ch;
+  --measure-tight: 54ch;
+
+  /* ---- Spacing scale ------------------------------------------- */
+  --s-1:  0.25rem;
+  --s-2:  0.5rem;
+  --s-3:  0.75rem;
+  --s-4:  1rem;
+  --s-5:  1.5rem;
+  --s-6:  2rem;
+  --s-7:  2.5rem;
+  --s-8:  3rem;
+  --s-9:  4rem;
+  --s-10: 5rem;
+  --s-11: 6.5rem;
+  --s-12: 8rem;
+
+  /* Section rhythm — one knob for vertical pace across the site */
+  --section-y: clamp(3.5rem, 2rem + 7vw, 7.5rem);
+  --gutter:    clamp(1.25rem, 0.7rem + 2.4vw, 2.75rem);
+  --wrap:      75rem;
+  --wrap-narrow: 56rem;
+
+  /* ---- Radii (architectural, not pill-soft) -------------------- */
+  --r-xs:   3px;
+  --r-sm:   5px;
+  --r:      8px;
+  --r-lg:   14px;
+  --r-pill: 999px;
+
+  /* ---- Elevation ----------------------------------------------- */
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 40%);
+  --shadow:    0 6px 24px -8px rgb(0 0 0 / 60%);
+  --shadow-lg: 0 24px 64px -20px rgb(0 0 0 / 78%);
+
+  /* ---- Motion -------------------------------------------------- */
+  --ease:     cubic-bezier(0.22, 0.61, 0.36, 1);
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --dur-fast: 140ms;
+  --dur:      260ms;
+  --dur-slow: 620ms;
+
+  /* ---- Chrome -------------------------------------------------- */
+  --header-h: 4.5rem;
+
+  color-scheme: dark;
+}
+
+@media (min-width: 60rem) {
+  :root { --header-h: 5.25rem; }
+}

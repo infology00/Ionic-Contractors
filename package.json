@@ -1,0 +1,16 @@
+{
+  "name": "ionic-contractors-website",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Marketing site for Ionic Contractors LLC — SDVOSB federal contractor.",
+  "type": "module",
+  "scripts": {
+    "build": "node build/build.mjs",
+    "preview": "node preview.mjs",
+    "dev": "node build/build.mjs && node preview.mjs",
+    "fonts": "node build/tools/fetch-fonts.mjs",
+    "video": "bash build/tools/encode-video.sh",
+    "icon": "node build/tools/make-icon.mjs"
+  },
+  "engines": { "node": ">=18" }
+}

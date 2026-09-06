@@ -1,0 +1,417 @@
+/* ==================================================================
+   SCROLL-SCRUB FILM STAGE
+   ------------------------------------------------------------------
+   A tall scroll track with a sticky viewport-height stage. Scroll
+   progress drives (a) the video's currentTime, and (b) a set of copy
+   "beats" that move through Z-space over the footage.
+
+   Progressive enhancement contract:
+   - No JS  -> the track collapses, the poster image shows, and every
+              beat renders as ordinary stacked content. Nothing hides.
+   - Reduced motion -> same static treatment; no scrub, no parallax.
+   - JS + motion OK -> sticky stage, scrubbed film, 3D beats.
+
+   JS writes these custom properties:
+     --p    overall stage progress          0..1
+     --px --py  pointer parallax            -1..1
+     per beat: --bo (opacity) --by (px) --bz (px) --bs (scale) --bblur
+================================================================== */
+
+.stage {
+  position: relative;
+  background: var(--c-void);
+}
+
+/* ---- Static fallback (no JS / reduced motion) -------------------- */
+.stage__track { position: relative; }
+
+.stage__sticky {
+  position: relative;
+  min-block-size: 100vh;
+  overflow: hidden;
+  display: grid;
+}
+
+.stage__scene { position: absolute; inset: 0; overflow: hidden; z-index: 0; }
+
+.stage__media {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+  /* Slight over-scale so the parallax push never reveals an edge */
+  transform: scale(1.06);
+  will-change: transform;
+}
+
+/* The <video> only appears once JS has confirmed it can scrub. */
+.stage__video { opacity: 0; transition: opacity 700ms var(--ease); }
+.stage__video[data-ready='true'] { opacity: 1; }
+
+.stage__poster { z-index: 0; }
+.stage__video  { z-index: 1; }
+
+/* ---- Colour grade + legibility scrims ---------------------------- */
+.stage__grade {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    /* vignette */
+    radial-gradient(120% 100% at 50% 45%, transparent 30%, rgb(4 8 7 / 62%) 100%),
+    /* top scrim under the fixed header */
+    linear-gradient(to bottom, rgb(4 8 7 / 88%) 0%, rgb(4 8 7 / 20%) 26%, transparent 46%),
+    /* bottom scrim under the copy */
+    linear-gradient(to top, rgb(4 8 7 / 92%) 0%, rgb(4 8 7 / 45%) 24%, transparent 55%),
+    /* Accent grade laid over the warm practical lighting */
+    linear-gradient(112deg, var(--c-accent-tint-8), transparent 46%, var(--c-secondary-tint-8));
+}
+
+/* Reading side-scrim so headline text always clears its background */
+.stage__grade--side {
+  background: linear-gradient(90deg, rgb(4 8 7 / 82%) 0%, rgb(4 8 7 / 42%) 42%, transparent 72%);
+}
+
+/* ---- Receding perspective floor grid (depth cue) ----------------- */
+.stage__depth {
+  position: absolute;
+  inset-inline: -25%;
+  inset-block-end: -8%;
+  block-size: 55%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.28;
+  background-image:
+    linear-gradient(to right, var(--c-accent-line) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--c-accent-line) 1px, transparent 1px);
+  background-size: 5rem 5rem;
+  transform: perspective(420px) rotateX(74deg) translateY(calc(var(--p, 0) * -40px));
+  transform-origin: center bottom;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 78%);
+  mask-image: linear-gradient(to top, #000 0%, transparent 78%);
+}
+
+/* ==================================================================
+   COPY BEATS
+================================================================== */
+
+.stage__layers {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  align-content: center;
+  padding-block: calc(var(--header-h) + var(--s-8)) var(--s-10);
+}
+
+.stage__beat { position: relative; }
+
+.stage__beat > .wrap { inline-size: 100%; }
+
+.beat__body { max-width: 46rem; }
+
+.beat__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 0.99;
+  letter-spacing: -0.018em;
+  text-wrap: balance;
+  color: var(--c-text);
+  text-shadow: 0 2px 40px rgb(4 8 7 / 85%);
+}
+
+.beat__sub {
+  margin-block-start: var(--s-5);
+  font-size: var(--t-md);
+  line-height: 1.6;
+  color: var(--c-text-2);
+  max-width: 44ch;
+  text-wrap: pretty;
+  text-shadow: 0 1px 24px rgb(4 8 7 / 85%);
+}
+
+.beat__actions { margin-block-start: var(--s-7); }
+
+/* Narrow viewports: the beat has to fit inside one sticky screen, so
+   the hero type steps down and the seal placeholder drops out — it is
+   repeated in the trust bar immediately below the stage. */
+@media (max-width: 34rem) {
+  .stage .t-hero { font-size: clamp(2.125rem, 1.5rem + 3.4vw, 2.75rem); }
+  .stage .t-4xl  { font-size: clamp(1.875rem, 1.4rem + 2.6vw, 2.5rem); }
+  .beat__sub { font-size: var(--t-base); max-width: 36ch; margin-block-start: var(--s-4); }
+  .beat__actions { margin-block-start: var(--s-5); }
+  .stage .seal-slot { display: none; }
+  .stage__beat .btn { inline-size: 100%; }
+}
+
+/* Short viewports (landscape phones, small laptops) get a tighter
+   beat so the copy never runs past the bottom of the sticky stage. */
+@media (max-height: 46rem) {
+  .stage .t-hero { font-size: clamp(2rem, 1.4rem + 3.2vw, 3.25rem); }
+  .stage .t-4xl  { font-size: clamp(1.75rem, 1.3rem + 2.2vw, 2.5rem); }
+  .beat__sub { font-size: var(--t-base); margin-block-start: var(--s-4); }
+  .beat__actions { margin-block-start: var(--s-5); }
+  .stage .seal-slot { display: none; }
+}
+
+/* ---- HUD: scene marker + progress rail --------------------------- */
+.stage__hud { display: none; }
+
+/* ==================================================================
+   ENHANCED MODE  (JS present, motion allowed)
+================================================================== */
+
+.js.motion-ok .stage__track { block-size: calc(var(--track-vh, 300) * 1vh); }
+
+.js.motion-ok .stage__sticky {
+  position: sticky;
+  inset-block-start: 0;
+  block-size: 100vh;
+  block-size: 100dvh;
+}
+
+.js.motion-ok .stage__layers {
+  position: absolute;
+  inset: 0;
+  perspective: 1400px;
+  perspective-origin: 50% 45%;
+  transform-style: preserve-3d;
+  padding: 0;
+}
+
+.js.motion-ok .stage__beat {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  padding-block: calc(var(--header-h) + var(--s-6)) var(--s-9);
+  opacity: var(--bo, 0);
+  transform:
+    translate3d(
+      calc(var(--px, 0) * var(--par-x, 16px)),
+      calc((var(--by, 0) * 1px) + (var(--py, 0) * var(--par-y, 10px))),
+      calc(var(--bz, 0) * 1px)
+    )
+    scale(var(--bs, 1));
+  filter: blur(calc(var(--bblur, 0) * 1px));
+  pointer-events: none;
+  will-change: opacity, transform;
+}
+
+/* Only the active beat can be clicked or focused. JS also sets [inert]. */
+.js.motion-ok .stage__beat[data-active='true'] { pointer-events: auto; }
+
+/* Camera push on the footage itself */
+.js.motion-ok .stage__media {
+  transform:
+    scale(calc(1.04 + var(--p, 0) * 0.07))
+    translate3d(calc(var(--px, 0) * -10px), calc(var(--py, 0) * -8px), 0);
+}
+
+/* ---- HUD --------------------------------------------------------- */
+.js.motion-ok .stage__hud {
+  display: flex;
+  position: absolute;
+  z-index: 4;
+  inset-block: 0;
+  inset-inline-end: var(--gutter);
+  align-items: center;
+  pointer-events: none;
+}
+
+@media (max-width: 47.999rem) { .js.motion-ok .stage__hud { display: none; } }
+
+.hud {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--s-4);
+}
+
+.hud__scene {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  font-weight: 500;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--c-accent);
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+}
+
+.hud__rail {
+  position: relative;
+  inline-size: 2px;
+  block-size: clamp(6rem, 18vh, 11rem);
+  background: var(--c-line-mid);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.hud__fill {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-start: 0;
+  block-size: calc(var(--p, 0) * 100%);
+  background: linear-gradient(to bottom, var(--c-accent-bright), var(--c-accent));
+}
+
+.hud__pct {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  font-weight: 500;
+  letter-spacing: 0.1em;
+  color: var(--c-text-3);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Scroll cue -------------------------------------------------- */
+.stage__cue {
+  position: absolute;
+  z-index: 4;
+  inset-block-end: var(--s-6);
+  inset-inline-start: var(--gutter);
+  display: none;
+  align-items: center;
+  gap: var(--s-3);
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+  pointer-events: none;
+  /* Fades out as soon as the user starts scrubbing */
+  opacity: calc(1 - var(--p, 0) * 6);
+}
+
+.js.motion-ok .stage__cue { display: flex; }
+
+.stage__cue-track {
+  position: relative;
+  inline-size: 1px;
+  block-size: 2.5rem;
+  background: var(--c-line-strong);
+  overflow: hidden;
+}
+
+.stage__cue-track::after {
+  content: '';
+  position: absolute;
+  inset-inline: 0;
+  block-size: 40%;
+  background: var(--c-accent);
+  animation: cue-run 2.4s var(--ease) infinite;
+}
+
+@keyframes cue-run {
+  0%   { transform: translateY(-100%); }
+  60%  { transform: translateY(250%); }
+  100% { transform: translateY(250%); }
+}
+
+/* ==================================================================
+   STATIC MODE  (no JS, or reduced motion)
+   Beats stack as normal content over the poster still.
+================================================================== */
+
+html:not(.motion-ok) .stage__sticky {
+  background-image: var(--poster-fallback);
+  background-size: cover;
+  background-position: center;
+}
+
+html:not(.motion-ok) .stage__layers { gap: var(--s-9); }
+
+html:not(.motion-ok) .stage__beat {
+  border-block-start: 1px solid var(--c-line-mid);
+  padding-block-start: var(--s-7);
+}
+html:not(.motion-ok) .stage__beat:first-child { border-block-start: 0; padding-block-start: 0; }
+
+/* Keep the poster visible; never show a black hole where video would be */
+html:not(.motion-ok) .stage__video { display: none; }
+
+/* ==================================================================
+   PRELOADER
+   Shown only because the hero genuinely waits on video buffering.
+   Self-dismisses on a timer even if the network stalls.
+================================================================== */
+
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 400;
+  display: grid;
+  place-items: center;
+  gap: var(--s-6);
+  background: var(--c-void);
+  transition: opacity 620ms var(--ease), visibility 0s linear 620ms;
+}
+
+.preloader[data-done='true'] { opacity: 0; visibility: hidden; pointer-events: none; }
+
+.preloader__inner { display: grid; justify-items: center; gap: var(--s-5); padding-inline: var(--gutter); }
+
+.preloader__mark { inline-size: 3.5rem; block-size: 3.5rem; color: var(--c-accent); }
+
+.preloader__word {
+  font-family: var(--font-mono);
+  font-size: var(--t-2xs);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--c-text-3);
+}
+
+.preloader__rail {
+  inline-size: min(14rem, 60vw);
+  block-size: 2px;
+  background: var(--c-line-mid);
+  overflow: hidden;
+  border-radius: 2px;
+}
+
+.preloader__fill {
+  block-size: 100%;
+  inline-size: 0%;
+  background: linear-gradient(90deg, var(--c-accent-deep), var(--c-accent-bright));
+  transition: inline-size 240ms var(--ease-out);
+}
+
+/* Never let the preloader run for a user who did not ask for motion,
+   and never let it exist at all without JS. */
+html.no-js .preloader,
+html[data-motion='reduced'] .preloader { display: none; }
+
+/* ==================================================================
+   SCROLL-REVEAL (used site-wide, gated on motion)
+================================================================== */
+
+.reveal { opacity: 1; }
+
+.js.motion-ok .reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition: opacity 760ms var(--ease-out), transform 760ms var(--ease-out);
+  transition-delay: var(--reveal-delay, 0ms);
+}
+
+.js.motion-ok .reveal[data-shown='true'] { opacity: 1; transform: none; }
+
+/* ==================================================================
+   REDUCED MOTION — hard stop on non-essential animation
+================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+
+  *, *::before, *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .stage__cue-track::after { animation: none; }
+  .reveal { opacity: 1 !important; transform: none !important; }
+}

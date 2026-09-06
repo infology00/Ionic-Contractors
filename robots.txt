@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /build/
+Disallow: /source/
 
 Sitemap: https://ionic.contractors/sitemap.xml
