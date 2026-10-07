@@ -19,8 +19,8 @@ const body = `
 
 export default {
   url: '/404.html',
-  title: 'Page not found',
-  description: 'The page you requested could not be found on the Ionic Contractors LLC website.',
+  title: 'Page Not Found | Ionic Contractors',
+  description: 'The page you requested could not be found on the Ionic Contractors website.',
   noIndex: true,
   body,
 };

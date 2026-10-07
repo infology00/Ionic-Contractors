@@ -1,111 +1,97 @@
-import { site, options } from '../site.mjs';
+import { site, capStatement } from '../site.mjs';
 import {
-  pageHero, sectionHead, ctaBand, icons, btn,
-  formShell, textField, selectField, needsInput, needsInputNote, esc,
+  pageHero, sectionHead, ctaBand, icons, btn, btnRow, capStatementBtn, logoImg,
 } from '../components.mjs';
 
-/* Four fields only, per the brief — the gate must stay low-friction. */
-const gateForm = formShell({
-  id: 'capability-statement-form',
-  leadType: 'capability_statement',
-  subject: 'Capability statement request — Ionic Contractors LLC',
-  submitLabel: 'Request Capability Statement',
-  note: 'Four fields. We send the document straight back and route your details to our team.',
-  fallbackNote: `The capability statement PDF has not been supplied yet, and no CRM endpoint is connected. Your request is handed to your email application pre-filled and addressed to <a href="mailto:${site.email}">${site.email}</a>; we will reply with the document. Automatic delivery is scheduled for the dev working session.`,
-  children: `
-    <div class="form__grid form__grid--2">
-      ${selectField({ name: 'who', label: 'Who you are', options: options.audience, required: true })}
-      ${selectField({ name: 'seeking', label: "What you're looking for", options: options.seeking, required: true })}
-      ${textField({ name: 'email', label: 'Email', type: 'email', required: true, autocomplete: 'email', placeholder: 'name@agency.gov' })}
-      ${textField({ name: 'phone', label: 'Phone number', type: 'tel', required: true, autocomplete: 'tel', placeholder: '000-000-0000' })}
-    </div>`,
-});
+/* Direct download, not gated. When the PDF is in place the primary
+   button downloads it; until then it opens a pre-addressed email so a
+   visitor is never left at a dead end. */
+const mailHref = `mailto:${site.email}?subject=${encodeURIComponent('Capability statement request: Ionic Contractors')}`;
+const getIt = capStatement.available
+  ? capStatementBtn('primary')
+  : btn(mailHref, 'Email me the capability statement', { variant: 'primary', icon: icons.mail(15) });
 
 const contents = [
-  'Company overview, entity structure and SDVOSB status',
-  'Certifications, registrations, UEI and CAGE identifiers',
-  'Capability lines mapped to NAICS codes',
-  'Principals&rsquo; operator experience and past performance',
+  'Company overview and SDVOSB status',
+  'Certifications, registrations, UEI, and CAGE identifiers',
+  'Capability lines mapped to NAICS and PSC codes',
+  'Locations: North Carolina headquarters, Texas and Florida field offices',
+  'Principals&rsquo; operator experience',
   'Differentiators and points of contact',
 ];
 
 const body = `
 ${pageHero({
   crumbs: [{ href: '/capability-statement/', label: 'Capability Statement' }],
-  eyebrow: 'Gated download',
-  title: 'Request the Ionic<br>capability statement.',
-  lead: 'The document contracting officers and proposal teams ask for — capability detail, registrations, NAICS mapping, and the principals&rsquo; operator experience. Four fields and it is on its way.',
+  eyebrow: 'Capability statement',
+  title: 'The Ionic capability statement.',
+  lead: `The document contracting officers, proposal teams, and owners ask for: capability detail, registrations, NAICS and PSC codes, and the principals&rsquo; operator experience. ${capStatement.available ? 'One click, no form.' : 'Ask and it is on its way, no form required.'}`,
+  actions: btnRow(getIt),
 })}
 
-<section class="section" aria-labelledby="gate-title">
+<section class="section" aria-labelledby="doc-title">
   <div class="wrap">
-    <div class="gate">
-      <div class="gate__doc reveal">
-        <div class="gate__sheet">
-          <div class="gate__sheet-inner">
-            <span style="color:var(--c-accent)">${icons.doc(34)}</span>
-            <span class="mono" style="color:var(--c-text-2);letter-spacing:.18em">Capability Statement</span>
-            <span class="gate__locked">${icons.lock(14)} Gated document</span>
-            ${needsInput('PDF not yet supplied')}
+    <div class="doc">
+      <div class="reveal" aria-hidden="true">
+        <div class="doc__sheet">
+          <span class="doc__sheet-bar"></span>
+          ${logoImg('color', { width: 220, alt: '' })}
+          <span class="doc__sheet-line"></span>
+          <span class="doc__sheet-line"></span>
+          <span class="doc__sheet-line"></span>
+          <div class="doc__sheet-cols">
+            <span class="doc__sheet-line"></span><span class="doc__sheet-line"></span>
+            <span class="doc__sheet-line"></span><span class="doc__sheet-line"></span>
+            <span class="doc__sheet-line"></span><span class="doc__sheet-line"></span>
           </div>
+          <span class="doc__sheet-foot"></span>
         </div>
-
-        <div class="gate__contents">
-          <p class="mono" style="color:var(--c-text-3);letter-spacing:.16em">What it contains</p>
-          ${contents.map((c) => `<p class="gate__content-row">${icons.check(14)}<span>${c}</span></p>`).join('')}
-        </div>
-
-        ${needsInputNote(
-          'Capability Statement PDF',
-          'The client is supplying this document. Until it is uploaded, requests are answered by email rather than an automatic download. This document &mdash; not the public site &mdash; is where the principals&rsquo; operator experience and past performance appear.'
-        )}
       </div>
 
       <div>
-        <div class="form-panel">
-          <div class="form-panel__head">
-            <p class="eyebrow">Quick qualifying form</p>
-            <h2 id="gate-title" class="display t-2xl">Four fields, then the document</h2>
-            <p>We ask who you are and what you need so the right person follows up &mdash; nothing more.</p>
-          </div>
-          ${gateForm}
+        ${sectionHead({
+          eyebrow: `Edition ${capStatement.edition}`,
+          title: 'What it contains',
+          id: 'doc-title',
+        })}
+        <div class="doc__contents">
+          ${contents.map((c) => `<p class="doc__row reveal">${icons.check(15)}<span>${c}</span></p>`).join('')}
         </div>
-
-        <div class="card mt-6 reveal">
-          <h3 class="card__title t-lg">Prefer to skip the form?</h3>
-          <p class="card__body">Email <a href="mailto:${site.email}" style="color:var(--c-accent-bright)">${site.email}</a> or call <a href="${site.phoneHref}" style="color:var(--c-accent-bright)">${site.phone}</a> and ask for the capability statement. We respond promptly, usually the same business day.</p>
-        </div>
+        <div class="reveal">${btnRow(
+          capStatement.available ? capStatementBtn('secondary') : btn(mailHref, 'Email me the capability statement', { variant: 'secondary', icon: icons.mail(15) }),
+          btn(site.phoneHref, `Call ${site.phone}`, { variant: 'ghost', arrow: false })
+        )}</div>
       </div>
     </div>
   </div>
 </section>
 
-<section class="section section--flush-top" aria-labelledby="meanwhile">
+<section class="section theme-gray" aria-labelledby="meanwhile">
   <div class="wrap">
     ${sectionHead({
-      eyebrow: 'In the meantime',
-      title: 'Everything public is already on the site.',
-      lead: 'Registrations, identifiers, NAICS mapping and capability detail are published openly. The capability statement adds the principals&rsquo; experience and the detail you would attach to a file.',
+      eyebrow: 'Also on this site',
+      title: 'Everything public is already here.',
+      lead: 'Registrations, identifiers, NAICS mapping, and capability detail are published openly.',
       id: 'meanwhile',
       center: true,
     })}
     <div class="grid grid--3">
       <article class="card card--link reveal">
         <span class="card__icon">${icons.shield()}</span>
-        <h3 class="card__title"><a class="card__link" href="/federal-contracting/">Certifications &amp; identifiers</a></h3>
-        <p class="card__body">SDVOSB, SAM, UEI ${site.ids.uei}, CAGE ${site.ids.cage}, and set-aside eligibility.</p>
+        <h3 class="card__title"><a class="card__link" href="/federal-contracting/">Certifications and identifiers</a></h3>
+        <p class="card__body">SDVOSB, SAM, UEI ${site.ids.uei}, CAGE ${site.ids.cage}, NAICS and PSC codes, and set-aside eligibility.</p>
         <span class="card__more">Federal contracting ${icons.arrow(13)}</span>
       </article>
-      <article class="card card--link reveal" style="--reveal-delay:60ms">
+      <article class="card card--link reveal" style="--reveal-delay:70ms">
         <span class="card__icon">${icons.construction()}</span>
-        <h3 class="card__title"><a class="card__link" href="/capabilities/">Capability matrix</a></h3>
-        <p class="card__body">Every capability line mapped to NAICS, with the delivery route for each.</p>
-        <span class="card__more">Capabilities ${icons.arrow(13)}</span>
+        <h3 class="card__title"><a class="card__link" href="/capabilities/#matrix">Capability matrix</a></h3>
+        <p class="card__body">Every capability line mapped to its NAICS codes.</p>
+        <span class="card__more">Capability matrix ${icons.arrow(13)}</span>
       </article>
-      <article class="card card--link reveal" style="--reveal-delay:120ms">
+      <article class="card card--link reveal" style="--reveal-delay:140ms">
         <span class="card__icon">${icons.handshake()}</span>
         <h3 class="card__title"><a class="card__link" href="/teaming/">Teaming vehicles</a></h3>
-        <p class="card__body">Subcontracting, joint ventures and mentor-prot&eacute;g&eacute; arrangements.</p>
+        <p class="card__body">Subcontracting, joint ventures, and mentor-prot&eacute;g&eacute; arrangements.</p>
         <span class="card__more">Teaming ${icons.arrow(13)}</span>
       </article>
     </div>
@@ -114,15 +100,15 @@ ${pageHero({
 
 ${ctaBand({
   title: 'Need it today?',
-  lead: 'Call and ask. We would rather get the document into your hands than have you wait on a form.',
+  lead: 'Call and ask. We would rather get the document into your hands than have you wait.',
 })}
 `;
 
 export default {
   url: '/capability-statement/',
-  title: 'Request the Ionic Contractors Capability Statement',
+  title: 'Capability Statement',
   description:
-    'Request the Ionic Contractors LLC capability statement — SDVOSB certification, SAM registration, UEI and CAGE identifiers, NAICS-mapped capability lines, and principals’ operator experience. Four-field request form.',
+    'Get the Ionic Contractors capability statement: SDVOSB status, UEI and CAGE, NAICS and PSC codes, locations, and principals’ operator experience.',
   crumbs: [{ href: '/capability-statement/', label: 'Capability Statement' }],
   body,
 };

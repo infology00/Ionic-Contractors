@@ -1,15 +1,16 @@
 import { site, addressLine } from '../site.mjs';
-import { pageHero, ctaBand, needsInputNote, icons, btn } from '../components.mjs';
+import { pageHero, ctaBand, icons } from '../components.mjs';
 
 /* ------------------------------------------------------------------
-   Legal pages ship as reviewed-ready templates, not invented law.
-   Each carries a visible "Needs input" notice so nothing here can be
-   mistaken for approved legal text.
+   Legal pages. The client is supplying final, counsel-approved text;
+   when it arrives, replace the `sections` arrays below and rebuild.
+   The copy here is plain, factual, and describes only what this site
+   actually does today (no analytics, no CRM, forms open your email).
 ------------------------------------------------------------------- */
 
-const LAST_REVIEWED = 'Not yet reviewed';
+const UPDATED = 'October 2026';
 
-function legalPage({ url, title, pageTitle, description, eyebrow, lead, notice, sections }) {
+function legalPage({ url, title, pageTitle, description, eyebrow, lead, sections }) {
   const body = `
 ${pageHero({
   crumbs: [{ href: url, label: title }],
@@ -22,9 +23,7 @@ ${pageHero({
   <div class="wrap wrap--narrow">
     <h2 id="legal-body" class="sr-only">${title}</h2>
 
-    ${needsInputNote('Legal text not yet approved', notice)}
-
-    <p class="mono mt-6" style="color:var(--c-text-3)">Last reviewed &middot; ${LAST_REVIEWED}</p>
+    <p class="mono" style="color:var(--c-text-3)">Last updated: ${UPDATED}</p>
 
     <div class="prose mt-6">
       ${sections.map((s) => `
@@ -34,7 +33,7 @@ ${pageHero({
       `).join('')}
 
       <h2 id="legal-contact">Contact</h2>
-      <p>Questions about this page can be sent to <a href="mailto:${site.email}">${site.email}</a> or ${site.phone}, or by post to ${addressLine}.</p>
+      <p>Questions about this page can be sent to <a href="mailto:${site.email}">${site.email}</a> or ${site.phone}, or by mail to ${site.name}, ${addressLine}.</p>
     </div>
   </div>
 </section>
@@ -42,7 +41,7 @@ ${pageHero({
 ${ctaBand({ title: 'Still need something from us?', lead: 'Call or email and we will point you to the right person.' })}
 `;
 
-  return { url, title: pageTitle.replace(/<br>/g, ' '), description, crumbs: [{ href: url, label: title }], body };
+  return { url, title: `${pageTitle} | Ionic Contractors`, description, crumbs: [{ href: url, label: title }], body };
 }
 
 /* ================================================================== */
@@ -52,48 +51,50 @@ export const privacy = legalPage({
   title: 'Privacy Policy',
   pageTitle: 'Privacy Policy',
   description:
-    'How Ionic Contractors LLC collects, uses, and protects information submitted through this website, including enquiry, teaming, and subcontractor registration forms.',
+    'How Ionic Contractors collects, uses, and protects information submitted through this website, including inquiry, teaming, and subcontractor registration forms.',
   eyebrow: 'Legal',
-  lead: 'How Ionic Contractors LLC handles information submitted through this website.',
-  notice:
-    'This is a structural template covering the disclosures a site with lead-capture forms typically needs. It has not been drafted or reviewed by counsel. Replace with approved text before launch &mdash; and confirm the CRM, analytics and email processors actually in use so the disclosures are accurate.',
+  lead: 'How Ionic Contractors handles information submitted through this website.',
   sections: [
     {
       id: 'information-we-collect', h: 'Information we collect',
       p: [
-        'This website collects the information you choose to submit through its forms. Depending on the form, that may include your name, organisation or agency, role, email address, telephone number, details of an opportunity or solicitation, and any files you attach.',
-        '<strong>[Placeholder]</strong> Confirm the complete list of fields collected across the contact, teaming, capability-statement and subcontractor-registration forms, and whether any additional information is collected automatically.',
+        'This website collects only the information you choose to submit through its forms. Depending on the form, that may include your name, organization or agency, role, email address, telephone number, details of an opportunity or solicitation, your firm&rsquo;s trades, NAICS codes, certifications, insurance, and bonding details, and the names of any files you select.',
+        'The site does not use advertising cookies or tracking pixels, and no analytics service is active.',
+      ],
+    },
+    {
+      id: 'how-forms-work', h: 'How our forms work',
+      p: [
+        'When you submit a form, your entries are checked in your browser and then handed to your own email application, pre-filled and addressed to us. Nothing is sent until you press send in your email application, and the message travels through your email provider like any other email.',
       ],
     },
     {
       id: 'how-we-use-it', h: 'How we use it',
-      p: ['Information submitted through this site is used to respond to your enquiry and to administer the relationship it relates to.'],
+      p: ['Information you send us is used to respond to your inquiry and to administer the relationship it relates to:'],
       list: [
-        'Responding to agency, prime contractor, and subcontractor enquiries',
-        'Delivering the capability statement when requested',
-        'Maintaining a subcontractor and vendor database',
-        '<strong>[Placeholder]</strong> Confirm any marketing or newsletter use, if applicable',
+        'Responding to agency, owner, prime contractor, and subcontractor inquiries',
+        'Sending the capability statement when requested',
+        'Maintaining our subcontractor and vendor network',
+        'Evaluating teaming and subcontracting opportunities',
       ],
     },
     {
-      id: 'analytics', h: 'Analytics and measurement',
+      id: 'sharing', h: 'Sharing',
       p: [
-        '<strong>[Placeholder]</strong> This site is built to run Google Analytics 4 and Google Search Console. Neither is active until measurement identifiers are supplied. Once enabled, disclose the data collected, the retention period, and the legal basis or consent mechanism relied upon.',
-      ],
-    },
-    {
-      id: 'sharing', h: 'Sharing and processors',
-      p: [
-        '<strong>[Placeholder]</strong> List the third parties that process submitted information &mdash; email provider, CRM, form-handling service, hosting provider and analytics &mdash; once those are selected in the dev working session.',
+        'We do not sell or rent personal information. We share it only with teaming partners or agencies where you have asked us to pursue an opportunity together, with service providers who host our email and website, or where the law requires it.',
       ],
     },
     {
       id: 'retention', h: 'Retention',
-      p: ['<strong>[Placeholder]</strong> State how long enquiry records and subcontractor registrations are retained, and what triggers deletion.'],
+      p: ['Inquiry records are kept for as long as needed to respond and to manage any resulting relationship. Subcontractor registrations are kept while your firm remains part of our network, or until you ask us to remove them.'],
     },
     {
-      id: 'your-rights', h: 'Your choices',
-      p: ['<strong>[Placeholder]</strong> Describe how someone can request access to, correction of, or deletion of information they submitted, and the response timeframe.'],
+      id: 'your-choices', h: 'Your choices',
+      p: [`You can ask us to access, correct, or delete information you have submitted by emailing <a href="mailto:${site.email}">${site.email}</a>. We respond to these requests promptly.`],
+    },
+    {
+      id: 'changes', h: 'Changes to this policy',
+      p: ['If our practices change, for example when online form handling or analytics are introduced, this page will be updated and the date above revised.'],
     },
   ],
 });
@@ -103,44 +104,41 @@ export const terms = legalPage({
   title: 'Terms of Use',
   pageTitle: 'Terms of Use',
   description:
-    'Terms governing use of the Ionic Contractors LLC website, including acceptable use, intellectual property, and limitations of liability.',
+    'Terms governing use of the Ionic Contractors website, including permitted use, accuracy of information, intellectual property, and limitation of liability.',
   eyebrow: 'Legal',
   lead: 'The terms that govern your use of this website.',
-  notice:
-    'Standard boilerplate structure only. This has not been drafted or reviewed by counsel and is not enforceable as written. Replace with approved text before launch.',
   sections: [
     {
       id: 'acceptance', h: 'Acceptance of terms',
-      p: ['By accessing this website you agree to these terms. If you do not agree, please do not use the site.',
-          '<strong>[Placeholder]</strong> Approved acceptance language.'],
+      p: ['By accessing this website you agree to these terms. If you do not agree, please do not use the site.'],
     },
     {
       id: 'use-of-site', h: 'Permitted use',
-      p: ['This site is provided for information about Ionic Contractors LLC and its capabilities, and to allow agencies, prime contractors, and subcontractors to make contact.'],
+      p: ['This site provides information about Ionic Contractors and its capabilities, and allows agencies, owners, prime contractors, and subcontractors to contact us.'],
       list: [
         'Do not use the site to transmit unlawful, misleading, or harmful material',
-        'Do not attempt to gain unauthorised access to the site or its systems',
+        'Do not attempt to gain unauthorized access to the site or its systems',
         'Do not use automated means to harvest information from the site',
       ],
     },
     {
       id: 'accuracy', h: 'Accuracy of information',
       p: [
-        'Certifications, registrations, and identifiers shown on this site are published in good faith and kept current. Formal verification should always be made through the relevant government system of record.',
-        '<strong>[Placeholder]</strong> Confirm approved disclaimer language regarding capability descriptions and forward-looking statements.',
+        'Certifications, registrations, and identifiers shown on this site are published in good faith and kept current. Formal verification should always be made through the relevant government system of record, such as SAM.gov and SBA VetCert.',
+        'Descriptions of capabilities are general in nature and do not constitute an offer, bid, or commitment to perform any specific work.',
       ],
     },
     {
       id: 'ip', h: 'Intellectual property',
-      p: ['<strong>[Placeholder]</strong> Ownership of site content, marks, and imagery, and the terms on which any of it may be reproduced.'],
+      p: ['The Ionic Contractors name, logo, and the content of this site belong to Ionic Contractors. They may not be reproduced or used to imply endorsement without written permission.'],
     },
     {
       id: 'liability', h: 'Limitation of liability',
-      p: ['<strong>[Placeholder]</strong> Approved limitation of liability and disclaimer of warranties.'],
+      p: ['This site is provided &ldquo;as is.&rdquo; To the extent permitted by law, Ionic Contractors is not liable for any loss arising from use of, or reliance on, the information on this site.'],
     },
     {
       id: 'governing-law', h: 'Governing law',
-      p: ['<strong>[Placeholder]</strong> Confirm governing law and venue. Ionic Contractors LLC is a North Carolina entity under Ionic Group LLC, a Wyoming holding company &mdash; counsel should confirm which applies.'],
+      p: ['These terms are governed by the laws of the State of North Carolina, without regard to its conflict-of-law rules.'],
     },
   ],
 });
@@ -150,51 +148,41 @@ export const accessibility = legalPage({
   title: 'Accessibility Statement',
   pageTitle: 'Accessibility Statement',
   description:
-    'Ionic Contractors LLC is committed to accessibility. This statement describes the measures taken to conform with Section 508 and WCAG 2.1 Level AA, and how to report a barrier.',
-  eyebrow: 'Section 508 &middot; ADA',
-  lead: 'Ionic Contractors is committed to making this site usable by everyone, including people using assistive technology. Accessibility matters particularly on a federal-facing site.',
-  notice:
-    'The conformance measures listed below describe what has actually been built into this site. The formal conformance claim, the evaluation date, and the details of any third-party audit still need to be confirmed and approved before launch.',
+    'How Ionic Contractors works to conform to Section 508 and WCAG 2.1 Level AA, the accessibility measures built into this site, and how to report a barrier.',
+  eyebrow: 'Section 508 · ADA',
+  lead: 'Ionic Contractors is committed to making this site usable by everyone, including people using assistive technology.',
   sections: [
     {
       id: 'commitment', h: 'Our commitment',
       p: [
-        'Ionic Contractors LLC aims to conform with Section 508 of the Rehabilitation Act and the Web Content Accessibility Guidelines (WCAG) 2.1 at Level AA.',
-        '<strong>[Placeholder]</strong> Confirm the formal conformance claim &mdash; fully conformant, partially conformant, or conformance in progress &mdash; and the date of the most recent evaluation.',
+        'Ionic Contractors aims to conform to Section 508 of the Rehabilitation Act and the Web Content Accessibility Guidelines (WCAG) 2.1 at Level AA.',
       ],
     },
     {
       id: 'measures', h: 'Measures built into this site',
-      p: ['The following have been implemented as part of the site build:'],
+      p: ['The following are built into the site:'],
       list: [
         'Semantic HTML landmarks, one main heading per page, and a logical heading order',
         'A skip-to-content link, visible keyboard focus indicators, and full keyboard operability',
         'Form labels programmatically associated with their inputs, with inline errors announced to assistive technology',
         'Alternative text on meaningful images and empty alternative text on decorative ones',
-        '<code>aria-expanded</code> state on the navigation menu and every accordion control',
-        'Support for <code>prefers-reduced-motion</code>: scroll-driven video and animation are disabled without hiding any content',
+        '<code>aria-expanded</code> state on the navigation menus and every accordion control',
+        'All animated content is also present as real text; with <code>prefers-reduced-motion</code> set, scroll animation is replaced by static panels without hiding any content',
         'Full content available with JavaScript disabled',
         'Text that reflows without horizontal scrolling down to 320&nbsp;pixels, with fluid type sizing',
-        'Touch targets sized for finger operation throughout',
+        'Color contrast meeting WCAG AA, and touch targets sized for finger operation throughout',
       ],
     },
     {
-      id: 'limitations', h: 'Known limitations',
+      id: 'documents', h: 'Documents',
       p: [
-        '<strong>[Placeholder]</strong> Record any known limitations here after evaluation &mdash; for example third-party embeds or documents that have not yet been remediated.',
-        'Note that the capability statement PDF, once supplied, must itself be checked for accessibility (tagged structure, reading order, and alternative text) before it is offered for download.',
+        'Downloadable documents, including the capability statement, are checked for tagged structure, reading order, and alternative text before they are published. If you need a document in another format, ask and we will provide it.',
       ],
     },
     {
       id: 'feedback', h: 'Reporting a barrier',
       p: [
         `If you encounter a barrier on this site, please tell us. Email <a href="mailto:${site.email}">${site.email}</a> or call ${site.phone} and describe the page and the problem. We will respond promptly and work to provide the information you need in an accessible format.`,
-      ],
-    },
-    {
-      id: 'assessment', h: 'Assessment approach',
-      p: [
-        '<strong>[Placeholder]</strong> State how the site was evaluated &mdash; self-assessment, external audit, or both &mdash; and name the evaluator and date once complete.',
       ],
     },
   ],

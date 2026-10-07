@@ -6,10 +6,7 @@ const OUT = path.resolve('assets/fonts');
 
 // family query -> { outName prefix }
 const JOBS = [
-  { q: 'Public+Sans:wght@300..800', name: 'public-sans-var' },
-  { q: 'Public+Sans:ital,wght@1,300..800', name: 'public-sans-var-italic' },
-  { q: 'Instrument+Serif:wght@400', name: 'instrument-serif-400' },
-  { q: 'Instrument+Serif:ital@1', name: 'instrument-serif-400-italic' },
+  { q: 'Archivo:wdth,wght@62..125,100..900', name: 'archivo-var' },
   { q: 'JetBrains+Mono:wght@400..600', name: 'jetbrains-mono-var' },
 ];
 

@@ -7,13 +7,14 @@
   padding: clamp(1.5rem, 1rem + 2.6vw, 3rem);
   border: 1px solid var(--c-line);
   border-radius: var(--r-lg);
-  background:
-    radial-gradient(110% 90% at 100% 0%, var(--c-accent-tint-8), transparent 55%),
-    linear-gradient(170deg, var(--c-surface-2), var(--c-surface));
+  background: var(--c-surface);
+  border-color: transparent;
 }
 
 .form-panel__head { margin-block-end: var(--s-6); }
-.form-panel__head h2 { font-size: var(--t-2xl); }
+.form-panel__head h2 { font-size: var(--fs-h3); }
+.form-panel__head .eyebrow { display: none; }
+.form-panel .input, .form-panel .select, .form-panel .textarea, .form-panel .file-input, .form-panel .check { background: var(--c-surface-2); }
 .form-panel__head p { margin-block-start: var(--s-3); color: var(--c-text-2); max-width: var(--measure); }
 
 .form { display: grid; gap: var(--s-5); }
@@ -26,10 +27,10 @@
 .field--full { grid-column: 1 / -1; }
 
 .field__label {
-  font-family: var(--font-mono);
-  font-size: var(--t-2xs);
+  font-stretch: var(--stretch-label);
+    font-size: var(--t-2xs);
   font-weight: 600;
-  letter-spacing: 0.13em;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--c-text-2);
   display: flex;
@@ -38,7 +39,7 @@
   flex-wrap: wrap;
 }
 
-.field__req { color: var(--c-accent); font-size: 1em; }
+.field__req { color: var(--c-error); font-size: 1em; }
 
 .field__optional {
   font-family: var(--font-sans);
@@ -55,7 +56,7 @@
   inline-size: 100%;
   min-block-size: 3rem;
   padding: 0.75rem 0.9375rem;
-  background: rgb(4 8 7 / 55%);
+  background: var(--c-surface-2);
   border: 1px solid var(--c-line-mid);
   border-radius: var(--r-sm);
   color: var(--c-text);
@@ -70,9 +71,9 @@
 .input:hover, .select:hover, .textarea:hover { border-color: var(--c-line-strong); }
 
 .input:focus-visible, .select:focus-visible, .textarea:focus-visible {
-  border-color: var(--c-accent);
-  background: rgb(4 8 7 / 80%);
-  box-shadow: 0 0 0 3px var(--c-accent-ring);
+  border-color: var(--c-text);
+  background: var(--c-surface-2);
+  box-shadow: 0 0 0 3px rgb(var(--c-orange-rgb) / 18%);
   outline: 2px solid var(--c-focus);
   outline-offset: 2px;
 }
@@ -95,7 +96,7 @@
   inline-size: 100%;
   padding: 0.75rem 0.9375rem;
   min-block-size: 3rem;
-  background: rgb(4 8 7 / 55%);
+  background: var(--c-surface-2);
   border: 1px dashed var(--c-line-strong);
   border-radius: var(--r-sm);
   font-size: var(--t-sm);
@@ -111,8 +112,7 @@
   border-radius: var(--r-xs);
   background: var(--c-accent-wash);
   color: var(--c-accent-bright);
-  font-family: var(--font-mono);
-  font-size: var(--t-2xs);
+    font-size: var(--t-2xs);
   letter-spacing: 0.1em;
   text-transform: uppercase;
   cursor: pointer;
@@ -129,7 +129,7 @@
   padding: var(--s-2) var(--s-3);
   border: 1px solid var(--c-line);
   border-radius: var(--r-sm);
-  background: rgb(4 8 7 / 40%);
+  background: var(--c-surface-2);
   cursor: pointer;
   font-size: var(--t-sm);
   color: var(--c-text-2);
@@ -141,7 +141,7 @@
 .check input {
   inline-size: 1.125rem;
   block-size: 1.125rem;
-  accent-color: var(--c-accent);
+  accent-color: var(--brand-graphite);
   flex: none;
   cursor: pointer;
 }
@@ -166,7 +166,7 @@
 .field[data-invalid='true'] .select,
 .field[data-invalid='true'] .textarea {
   border-color: var(--c-error);
-  background: rgb(255 138 122 / 6%);
+  background: rgb(180 35 24 / 5%);
 }
 
 /* ---- Submit row / status ------------------------------------------ */
@@ -179,7 +179,7 @@
 }
 
 .form__note { font-size: var(--t-xs); color: var(--c-text-3); max-width: 44ch; }
-.form__note a { color: var(--c-accent); }
+.form__note a { color: var(--c-text); font-weight: 600; }
 
 /* Live region — announced to screen readers on submit */
 .form__status {
@@ -195,35 +195,20 @@
 .form__status[data-state='error'] {
   display: flex;
   color: var(--c-error);
-  border-color: rgb(255 138 122 / 40%);
-  background: rgb(255 138 122 / 8%);
+  border-color: rgb(180 35 24 / 35%);
+  background: rgb(180 35 24 / 6%);
 }
 
 .form__status[data-state='success'] {
   display: flex;
   color: var(--c-success);
-  border-color: rgb(126 217 184 / 40%);
-  background: rgb(126 217 184 / 8%);
+  border-color: rgb(20 108 67 / 35%);
+  background: rgb(20 108 67 / 6%);
 }
 
 .form__status svg { flex: none; margin-block-start: 0.2em; }
 .form__status a { color: inherit; font-weight: 600; }
 
-/* ---- Fallback notice (no backend wired yet) ------------------------ */
-.form-fallback {
-  display: flex;
-  gap: var(--s-3);
-  padding: var(--s-4);
-  border: 1px solid var(--c-line-mid);
-  border-radius: var(--r-sm);
-  background: rgb(4 8 7 / 40%);
-  font-size: var(--t-xs);
-  color: var(--c-text-3);
-  line-height: 1.6;
-}
-
-.form-fallback svg { flex: none; color: var(--c-accent); margin-block-start: 0.15em; }
-.form-fallback a { color: var(--c-accent-bright); }
 
 /* noscript guidance sits in the same visual language */
 .noscript-note {
@@ -242,8 +227,8 @@
 .fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: var(--s-5); }
 
 .fieldset__legend {
-  font-family: var(--font-mono);
-  font-size: var(--t-2xs);
+  font-stretch: var(--stretch-label);
+    font-size: var(--t-2xs);
   font-weight: 600;
   letter-spacing: 0.16em;
   text-transform: uppercase;

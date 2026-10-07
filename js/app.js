@@ -4,147 +4,157 @@
    Everything here is an enhancement. With this file removed the site
    still renders all of its content, all links work, and forms fall
    back to a plain mailto: submission.
+
+   Motion runs on GSAP + ScrollTrigger (self-hosted), with Lenis for
+   smooth wheel scrolling. Both are driven from one gsap.ticker so the
+   scroll position ScrollTrigger reads is always the one Lenis painted.
 ================================================================== */
 (function () {
   'use strict';
 
   var root = document.documentElement;
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  var gsap = window.gsap;
+  var ST = window.ScrollTrigger;
 
-  /* Cross-fade ramp length, in stage-progress units. Beat windows in
-     the page templates are spaced so each fade-out overlaps the next
-     fade-in by exactly this much. */
-  var FADE = 0.17;
+  /* No GSAP (blocked, failed to load) -> drop to the static layout the
+     CSS already provides for reduced motion. Nothing is ever hidden. */
+  if (!gsap || !ST) {
+    root.classList.remove('motion-ok');
+    root.setAttribute('data-motion', 'reduced');
+  } else {
+    gsap.registerPlugin(ST);
+  }
 
+  var motionOK = function () { return !reduceMotion.matches && root.classList.contains('motion-ok'); };
   var clamp = function (v, min, max) { return v < min ? min : v > max ? max : v; };
-  var lerp = function (a, b, t) { return a + (b - a) * t; };
-
-  /* Normalised 0..1 progress of `v` inside [a, b]. */
-  function range(v, a, b) { return clamp((v - a) / (b - a || 1), 0, 1); }
-
-  /* Smootherstep — used to ease beat transitions without a library. */
-  function ease(t) { return t * t * t * (t * (t * 6 - 15) + 10); }
-
-  var motionOK = function () { return !reduceMotion.matches; };
+  var $ = function (sel, ctx) { return (ctx || document).querySelector(sel); };
+  var $$ = function (sel, ctx) { return Array.prototype.slice.call((ctx || document).querySelectorAll(sel)); };
+  var headerOffset = function () {
+    var bar = $('.bar');
+    return (bar ? bar.offsetHeight : 80) + 16;
+  };
 
   /* ================================================================
-     rAF ticker — one loop drives Lenis, the film scrub and parallax.
-
-     The loop parks itself when nothing is moving. A permanently
-     running rAF keeps a laptop fan on and a phone battery draining
-     for a page that is sitting still, so each ticker reports whether
-     it still needs frames and the loop stops when they all say no.
-     Any input wakes it again.
-  ================================================================ */
-  var tickers = [];
-  var rafId = null;
-  var idleCountdown = 0;
-
-  function addTicker(fn) { tickers.push(fn); wake(); }
-
-  /* Keep running for `frames` more frames, and restart if parked. */
-  function wake(frames) {
-    idleCountdown = Math.max(idleCountdown, frames || 40);
-    if (rafId === null) rafId = requestAnimationFrame(frame);
-  }
-
-  function frame(time) {
-    var busy = false;
-    for (var i = 0; i < tickers.length; i++) {
-      if (tickers[i](time)) busy = true;
-    }
-    if (busy) idleCountdown = Math.max(idleCountdown, 8);
-    idleCountdown--;
-    if (idleCountdown <= 0) { rafId = null; return; }   // park
-    rafId = requestAnimationFrame(frame);
-  }
-
-  /* Anything that can change what is on screen wakes the loop. */
-  ['scroll', 'wheel', 'touchmove', 'touchstart', 'keydown', 'resize', 'orientationchange']
-    .forEach(function (evt) {
-      window.addEventListener(evt, function () { wake(); }, { passive: true });
-    });
-
-  /* ================================================================
-     LENIS — subtle smooth scrolling
-     Deliberately light: enough to take the edge off wheel steps and
-     to make the film scrub feel continuous, not enough to feel like
-     the page is sliding around on its own.
+     LENIS — smooth wheel scrolling, synced to ScrollTrigger.
+     Light lerp, and timelines below use short scrub values, so the two
+     smoothings never stack into a floaty, laggy feel.
   ================================================================ */
   var lenis = null;
 
   function initLenis() {
     if (!window.Lenis || !motionOK()) return;
-    /* Touch devices keep their native momentum — smoothing there
-       fights the platform and hurts more than it helps. */
     lenis = new window.Lenis({
-      lerp: 0.11,
+      lerp: 0.14,
       wheelMultiplier: 1,
       smoothWheel: true,
       syncTouch: false,
       autoRaf: false,
       anchors: false
     });
+    lenis.on('scroll', ST.update);
+    gsap.ticker.add(function (time) { lenis.raf(time * 1000); });
+    gsap.ticker.lagSmoothing(0);
+  }
 
-    addTicker(function (time) {
-      lenis.raf(time);
-      return !!lenis.isScrolling;
-    });
+  function scrollToY(y, done) {
+    if (lenis) lenis.scrollTo(y, { onComplete: done });
+    else { window.scrollTo({ top: y, behavior: motionOK() ? 'smooth' : 'auto' }); if (done) setTimeout(done, 400); }
+  }
 
-    /* In-page anchors go through Lenis so they land smoothly, but
-       focus is still moved so keyboard users are not stranded. */
+  /* In-page anchors land below the fixed bar, and focus moves with
+     them so keyboard users are not stranded. */
+  function initAnchors() {
     document.addEventListener('click', function (e) {
-      var link = e.target.closest && e.target.closest('a[href^="#"]');
+      var link = e.target.closest && e.target.closest('a[href*="#"]');
       if (!link) return;
-      var id = link.getAttribute('href');
-      if (!id || id === '#' || id.length < 2) return;
-      var target = document.querySelector(id);
+      var url = new URL(link.href, window.location.href);
+      if (url.pathname !== window.location.pathname || !url.hash || url.hash.length < 2) return;
+      var target = document.getElementById(decodeURIComponent(url.hash.slice(1)));
       if (!target) return;
       e.preventDefault();
-      lenis.scrollTo(target, {
-        offset: -(parseFloat(getComputedStyle(root).getPropertyValue('--header-h')) || 80) - 16,
-        onComplete: function () {
-          if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
-          target.focus({ preventScroll: true });
-        }
+      var y = target.getBoundingClientRect().top + window.scrollY - headerOffset();
+      scrollToY(y, function () {
+        if (!target.hasAttribute('tabindex')) target.setAttribute('tabindex', '-1');
+        target.focus({ preventScroll: true });
       });
+      history.replaceState(null, '', url.hash);
     });
   }
 
   /* ================================================================
-     HEADER — solid background once the hero film is behind us
+     HEADER — utility bar tucks away on scroll; progress line.
+     Driven by ScrollTrigger (no raw scroll listener) and written only
+     as a transform, so it never triggers layout.
   ================================================================ */
   function initHeader() {
-    var header = document.querySelector('[data-header]');
+    var header = $('[data-header]');
     if (!header) return;
+    var bar = $('[data-progress]');
     var last = null;
-    var update = function () {
-      var scrolled = window.scrollY > 24;
+    var update = function (y, progress) {
+      var scrolled = y > 40;
       if (scrolled !== last) {
         header.setAttribute('data-scrolled', scrolled ? 'true' : 'false');
         last = scrolled;
       }
+      if (bar) bar.style.transform = 'scaleX(' + progress.toFixed(4) + ')';
     };
-    update();
-    window.addEventListener('scroll', update, { passive: true });
+    if (ST) {
+      ST.create({
+        start: 0,
+        end: 'max',
+        onUpdate: function (self) { update(self.scroll(), self.progress); },
+        onRefresh: function (self) { update(self.scroll(), self.progress); }
+      });
+    } else {
+      /* No GSAP: a passive listener is the only option left. */
+      var fallback = function () {
+        var max = document.documentElement.scrollHeight - window.innerHeight;
+        update(window.scrollY, max > 0 ? clamp(window.scrollY / max, 0, 1) : 0);
+      };
+      fallback();
+      window.addEventListener('scroll', fallback, { passive: true });
+    }
+  }
+
+  /* ================================================================
+     MARKETS DROPDOWN — hover/focus opens via CSS; the chevron button
+     gives keyboard and touch users an explicit toggle.
+  ================================================================ */
+  function initMenus() {
+    $$('[data-menu]').forEach(function (item) {
+      var toggle = $('[data-menu-toggle]', item);
+      if (!toggle) return;
+      var set = function (open) {
+        item.setAttribute('data-open', open ? 'true' : 'false');
+        toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+      };
+      toggle.addEventListener('click', function () { set(item.getAttribute('data-open') !== 'true'); });
+      item.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') { set(false); toggle.focus(); }
+      });
+      item.addEventListener('focusout', function (e) {
+        if (!item.contains(e.relatedTarget)) set(false);
+      });
+      item.addEventListener('mouseleave', function () { set(false); });
+    });
   }
 
   /* ================================================================
      MOBILE DRAWER — real off-canvas nav with a focus trap
   ================================================================ */
   function initDrawer() {
-    var btn = document.querySelector('[data-menu-btn]');
-    var drawer = document.querySelector('[data-drawer]');
+    var btn = $('[data-menu-btn]');
+    var drawer = $('[data-drawer]');
     if (!btn || !drawer) return;
 
-    var closeBtn = drawer.querySelector('[data-drawer-close]');
+    var closeBtn = $('[data-drawer-close]', drawer);
     var lastFocus = null;
 
     function focusables() {
-      return Array.prototype.filter.call(
-        drawer.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'),
-        function (el) { return el.offsetParent !== null; }
-      );
+      return $$('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])', drawer)
+        .filter(function (el) { return el.offsetParent !== null; });
     }
 
     function open() {
@@ -166,9 +176,6 @@
       document.body.style.overflow = '';
       if (lenis) lenis.start();
       document.removeEventListener('keydown', onKey);
-      /* Return focus where it came from; if that is no longer a real
-         target, put it on the toggle so the tab order never resets to
-         the top of the document. */
       var back = (lastFocus && lastFocus.isConnected && lastFocus !== document.body) ? lastFocus : btn;
       back.focus();
     }
@@ -188,14 +195,8 @@
       drawer.getAttribute('data-open') === 'true' ? close() : open();
     });
     if (closeBtn) closeBtn.addEventListener('click', close);
-
-    /* Following a link inside the drawer should close it */
-    drawer.addEventListener('click', function (e) {
-      if (e.target.closest('a[href]')) close();
-    });
-
-    /* Escaping to desktop width must not leave the page scroll-locked */
-    window.matchMedia('(min-width: 76rem)').addEventListener('change', function (e) {
+    drawer.addEventListener('click', function (e) { if (e.target.closest('a[href]')) close(); });
+    window.matchMedia('(min-width: 62rem)').addEventListener('change', function (e) {
       if (e.matches && drawer.getAttribute('data-open') === 'true') close();
     });
   }
@@ -204,8 +205,7 @@
      ACCORDION
   ================================================================ */
   function initAccordions() {
-    var triggers = document.querySelectorAll('[data-accordion-trigger]');
-    Array.prototype.forEach.call(triggers, function (trigger) {
+    $$('[data-accordion-trigger]').forEach(function (trigger) {
       var panel = document.getElementById(trigger.getAttribute('aria-controls'));
       if (!panel) return;
 
@@ -216,11 +216,6 @@
       if (!startOpen) panel.setAttribute('hidden', '');
       panel.style.transition = motionOK() ? 'height 380ms cubic-bezier(0.22,0.61,0.36,1)' : 'none';
 
-      /* Run `fn` when the height transition ends — or on a timer if it
-         never fires (reduced motion, a background tab, a browser that
-         skips a zero-length transition). Without the fallback a
-         collapsed panel can stay in the tab order and the a11y tree
-         while looking shut. */
       function onSettled(fn) {
         var done = false;
         var finish = function () {
@@ -229,6 +224,7 @@
           panel.removeEventListener('transitionend', finish);
           window.clearTimeout(timer);
           fn();
+          if (ST) ST.refresh();   // page height changed: re-measure triggers
         };
         var timer = window.setTimeout(finish, motionOK() ? 460 : 0);
         if (motionOK()) panel.addEventListener('transitionend', finish);
@@ -253,353 +249,421 @@
   }
 
   /* ================================================================
-     SCROLL REVEAL
+     SPLIT HEADLINES — words rise out of a padded mask.
+     Walks text nodes only, so <br>, <em> and entities survive and the
+     words stay in reading order. Once a word lands, its mask is
+     released (overflow: visible) so nothing can stay clipped.
+  ================================================================ */
+  function splitWords(el) {
+    if (el.getAttribute('data-split-done')) return $$('.split-word > span', el);
+    (function walk(node) {
+      Array.prototype.slice.call(node.childNodes).forEach(function (child) {
+        if (child.nodeType === 3) {
+          var parts = child.textContent.split(/(\s+)/);
+          var frag = document.createDocumentFragment();
+          parts.forEach(function (part) {
+            if (!part) return;
+            if (/^\s+$/.test(part)) { frag.appendChild(document.createTextNode(part)); return; }
+            var outer = document.createElement('span');
+            outer.className = 'split-word';
+            var inner = document.createElement('span');
+            inner.textContent = part;
+            outer.appendChild(inner);
+            frag.appendChild(outer);
+          });
+          child.parentNode.replaceChild(frag, child);
+        } else if (child.nodeType === 1 && child.tagName !== 'BR') {
+          walk(child);
+        }
+      });
+    })(el);
+    el.setAttribute('data-split-done', 'true');
+    return $$('.split-word > span', el);
+  }
+
+  function initSplits() {
+    if (!motionOK()) return;
+    $$('[data-split]').forEach(function (el) {
+      var words = splitWords(el);
+      gsap.set(words, { yPercent: 110 });
+      el.style.visibility = 'visible';
+      el.style.animation = 'none';
+      var immediate = el.closest('.page-hero') || el.closest('[data-beat="open"]');
+      var tween = {
+        yPercent: 0,
+        duration: 0.8,
+        ease: 'expo.out',
+        stagger: 0.035,
+        delay: immediate ? 0.1 : 0,
+        onComplete: function () {
+          $$('.split-word', el).forEach(function (w) { w.classList.add('is-done'); });
+        }
+      };
+      if (!immediate) tween.scrollTrigger = { trigger: el, start: 'top 92%', once: true };
+      gsap.to(words, tween);
+    });
+  }
+
+  /* ================================================================
+     REVEALS — batched and triggered early, so content is already in
+     place by the time it is read. Short distance, short duration.
   ================================================================ */
   function initReveal() {
-    var items = document.querySelectorAll('.reveal');
+    var items = $$('.reveal');
     if (!items.length) return;
-    if (!motionOK() || !('IntersectionObserver' in window)) {
-      Array.prototype.forEach.call(items, function (el) { el.setAttribute('data-shown', 'true'); });
+    if (!motionOK()) {
+      items.forEach(function (el) { el.setAttribute('data-shown', 'true'); });
       return;
     }
-    var io = new IntersectionObserver(function (entries) {
-      entries.forEach(function (entry) {
-        if (!entry.isIntersecting) return;
-        entry.target.setAttribute('data-shown', 'true');
-        io.unobserve(entry.target);
+    ST.batch(items, {
+      start: 'top 96%',
+      once: true,
+      onEnter: function (batch) {
+        batch.forEach(function (el, i) {
+          if (!el.style.getPropertyValue('--reveal-delay')) el.style.setProperty('--reveal-delay', (i * 60) + 'ms');
+          el.setAttribute('data-shown', 'true');
+        });
+      }
+    });
+    requestAnimationFrame(function () {
+      items.forEach(function (el) {
+        if (el.getBoundingClientRect().top < window.innerHeight) el.setAttribute('data-shown', 'true');
       });
-    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.08 });
-    Array.prototype.forEach.call(items, function (el) { io.observe(el); });
+    });
   }
 
   /* ================================================================
-     FILM STAGE — scroll-scrubbed video with 3D copy beats
+     PAGE HERO — the hex lattice drifts slower than the page (depth),
+     transform only.
   ================================================================ */
-  function initStage(stage) {
-    var track = stage.querySelector('[data-track]');
-    var video = stage.querySelector('[data-video]');
-    var beats = Array.prototype.slice.call(stage.querySelectorAll('[data-beat]'));
-    var hudFill = stage.querySelector('[data-hud-pct]');
-    var cue = stage.querySelector('[data-anim-loop].stage__cue');
-    var cueIdle = null;
-    if (!track) return null;
-
-    var progress = 0;          // eased progress actually rendered
-    var targetProgress = 0;    // raw progress from scroll position
-    var scrubTime = 0;         // eased video time
-    var ready = false;
-
-    /* ---- Video readiness ---------------------------------------- */
-    function prepareVideo() {
-      if (!video) return;
-      video.muted = true;
-      video.defaultMuted = true;
-      video.playsInline = true;
-      video.setAttribute('playsinline', '');
-
-      var markReady = function () {
-        if (ready) return;
-        ready = true;
-        video.setAttribute('data-ready', 'true');
-        stage.setAttribute('data-video-ready', 'true');
-      };
-
-      /* Some engines will not decode a frame until playback has been
-         kicked once. Play-then-pause forces the first decode without
-         ever being audible or visibly playing. */
-      var kick = function () {
-        var p = video.play();
-        if (p && p.then) p.then(function () { video.pause(); markReady(); }).catch(markReady);
-        else { video.pause(); markReady(); }
-      };
-
-      if (video.readyState >= 2) kick();
-      else video.addEventListener('loadeddata', kick, { once: true });
-      video.addEventListener('error', function () { stage.setAttribute('data-video-error', 'true'); });
-    }
-
-    /* Lazily attach the source for stages further down the page. */
-    var lazySrc = video && video.getAttribute('data-src-desktop');
-    function attachSource() {
-      if (!video) return;
-      /* The eager stage already carries a src in the markup so the
-         browser can start buffering during HTML parse; only the lazy
-         stages need one attached here. */
-      if (!video.getAttribute('src')) {
-        var small = video.getAttribute('data-src-mobile');
-        var useSmall = window.matchMedia('(max-width: 47.999rem)').matches;
-        video.src = (useSmall && small) ? small : lazySrc;
-        video.load();
-      }
-      prepareVideo();
-    }
-
-    if (video) {
-      if (stage.getAttribute('data-eager') === 'true') attachSource();
-      else if ('IntersectionObserver' in window) {
-        var srcIO = new IntersectionObserver(function (entries) {
-          if (entries[0].isIntersecting) { attachSource(); srcIO.disconnect(); }
-        }, { rootMargin: '150% 0px' });
-        srcIO.observe(stage);
-      } else attachSource();
-    }
-
-    /* ---- Beat windows -------------------------------------------- */
-    /* Tracks each beat's active state so the first render always applies. */
-    var beatActive = beats.map(function () { return null; });
-
-    var windows = beats.map(function (beat, i) {
-      var start = parseFloat(beat.getAttribute('data-beat-start'));
-      var end = parseFloat(beat.getAttribute('data-beat-end'));
-      if (isNaN(start) || isNaN(end)) {
-        start = i / beats.length;
-        end = (i + 1) / beats.length;
-      }
-      return { start: start, end: end };
+  function initPageHero() {
+    if (!motionOK()) return;
+    var hero = $('.page-hero');
+    if (!hero) return;
+    var lat = $('.page-hero__lattice', hero);
+    if (lat) gsap.to(lat, { yPercent: 14, ease: 'none', scrollTrigger: { trigger: hero, start: 'top top', end: 'bottom top', scrub: true } });
+    gsap.from($$('.crumbs, .lead, [data-hero-inner] > div', hero), {
+      y: 16, opacity: 0, duration: 0.7, ease: 'expo.out', stagger: 0.06, delay: 0.2
     });
-
-    function renderBeats(p) {
-      for (var i = 0; i < beats.length; i++) {
-        var beat = beats[i];
-        var w = windows[i];
-        var span = w.end - w.start;
-        /* A constant ramp length is what makes the cross-fades line up:
-           each beat's fade-out occupies exactly the window the next
-           beat's fade-in does, so the stage is never blank. */
-        var fade = Math.min(FADE, span * 0.5);
-
-        /* A beat that opens the stage is already at rest when the page
-           loads — it must not fade up from nothing at scroll top. A
-           beat that closes it stays put rather than fading to nothing
-           just as the stage releases. */
-        var enter = w.start <= 0.0001 ? 1 : ease(range(p, w.start, w.start + fade));
-        var exit = w.end >= 0.9999 ? 0 : ease(range(p, w.end - fade, w.end));
-        var alpha = clamp(Math.min(enter, 1 - exit), 0, 1);
-
-        /* Depth: arrive from far away, settle at rest, then pass the
-           camera on the way out. Entry and exit never overlap, so the
-           two halves simply sum. */
-        var z = lerp(-320, 0, enter) + lerp(0, 240, exit);
-        var y = lerp(52, 0, enter) + lerp(0, -52, exit);
-        var scale = lerp(0.93, 1, enter) * lerp(1, 1.06, exit);
-        var blur = (1 - enter) * 8 + exit * 6;
-
-        beat.style.setProperty('--bo', alpha.toFixed(3));
-        beat.style.setProperty('--bz', z.toFixed(1));
-        beat.style.setProperty('--by', y.toFixed(1));
-        beat.style.setProperty('--bs', scale.toFixed(3));
-        beat.style.setProperty('--bblur', blur.toFixed(2));
-
-        /* Compared against JS-held state, not the markup attribute, so
-           the very first pass always applies — otherwise the beats
-           that ship as data-active="false" would never actually be
-           made inert, leaving invisible CTAs in the tab order. */
-        var active = alpha > 0.55;
-        if (active !== beatActive[i]) {
-          beatActive[i] = active;
-          beat.setAttribute('data-active', active ? 'true' : 'false');
-          /* Keeps off-screen CTAs out of the tab order and out of the
-             accessibility tree while they are faded out. */
-          if ('inert' in beat) beat.inert = !active;
-          else if (active) beat.removeAttribute('aria-hidden');
-          else beat.setAttribute('aria-hidden', 'true');
-        }
-      }
-    }
-
-    function measure() {
-      var rect = track.getBoundingClientRect();
-      var distance = track.offsetHeight - window.innerHeight;
-      if (distance <= 0) return 0;
-      return clamp(-rect.top / distance, 0, 1);
-    }
-
-    function tick() {
-      targetProgress = measure();
-      /* A touch of easing on top of Lenis keeps the film from
-         stepping when a trackpad delivers big scroll jumps. */
-      progress = lerp(progress, targetProgress, 0.16);
-      if (Math.abs(progress - targetProgress) < 0.0004) progress = targetProgress;
-
-      stage.style.setProperty('--p', progress.toFixed(4));
-      renderBeats(progress);
-
-      if (hudFill) {
-        var pct = Math.round(progress * 100);
-        if (hudFill.textContent !== pct + '%') hudFill.textContent = pct + '%';
-      }
-
-      /* The scroll cue is invisible past a sliver of progress; stop
-         animating it there rather than looping behind opacity 0. */
-      if (cue) {
-        var hide = progress > 0.02;
-        if (hide !== cueIdle) { cue.setAttribute('data-anim-idle', hide ? 'true' : 'false'); cueIdle = hide; }
-      }
-
-      var busy = Math.abs(progress - targetProgress) > 0.0002;
-
-      if (ready && video && video.duration) {
-        var want = progress * video.duration * 0.995;
-        scrubTime = lerp(scrubTime, want, 0.22);
-        /* Only seek when the delta is worth a frame, and never while a
-           previous seek is still resolving — that is what makes
-           scrubbing stutter. */
-        if (!video.seeking && Math.abs(video.currentTime - scrubTime) > 1 / 48) {
-          try { video.currentTime = scrubTime; } catch (err) { /* seek raced a reload */ }
-          busy = true;
-        }
-        if (Math.abs(scrubTime - want) > 1 / 48) busy = true;
-      }
-
-      return busy;
-    }
-
-    /* Render once, synchronously, at init. The stage is then correct —
-       including `inert` on the beats that are faded out — without
-       waiting for an animation frame that may be delayed or, in a
-       background tab, may not arrive at all. */
-    progress = targetProgress = measure();
-    stage.style.setProperty('--p', progress.toFixed(4));
-    renderBeats(progress);
-
-    return { tick: tick, stage: stage };
-  }
-
-  function initStages() {
-    var stages = document.querySelectorAll('[data-stage]');
-    if (!stages.length) return;
-
-    if (!motionOK()) return;   // static poster treatment, handled in CSS
-
-    var instances = [];
-    Array.prototype.forEach.call(stages, function (stage) {
-      var inst = initStage(stage);
-      if (inst) instances.push(inst);
-    });
-    if (!instances.length) return;
-
-    addTicker(function () {
-      var busy = false;
-      for (var i = 0; i < instances.length; i++) {
-        if (instances[i].tick()) busy = true;
-      }
-      return busy;
-    });
-
-    /* A video that finishes buffering after the loop has parked still
-       needs one pass to paint its first scrubbed frame. */
-    document.addEventListener('loadeddata', function () { wake(); }, true);
   }
 
   /* ================================================================
-     LOOPING ANIMATIONS — pause them when they are not being watched
+     MARQUEE — one continuous loop whose speed follows scroll velocity.
+     The velocity is eased on the shared ticker (one write per frame),
+     instead of spawning new tweens on every scroll event.
+  ================================================================ */
+  function initMarquees() {
+    if (!motionOK()) return;
+    $$('[data-marquee]').forEach(function (m) {
+      var track = $('.marquee__track', m);
+      m.setAttribute('data-gsap', 'true');
+      var loop = gsap.to(track, { xPercent: -50, ease: 'none', duration: 42, repeat: -1 });
+      var target = 1, current = 1, active = false;
+      ST.create({
+        trigger: m,
+        start: 'top bottom',
+        end: 'bottom top',
+        onToggle: function (self) { active = self.isActive; active ? loop.play() : loop.pause(); },
+        onUpdate: function (self) {
+          var v = self.getVelocity();
+          target = (v < 0 ? -1 : 1) * (1 + clamp(Math.abs(v) / 300, 0, 4));
+        }
+      });
+      gsap.ticker.add(function () {
+        if (!active) return;
+        target += ((target > 0 ? 1 : -1) - target) * 0.04;   // settle back to cruising speed
+        current += (target - current) * 0.12;
+        loop.timeScale(current);
+      });
+    });
+  }
+
+  /* ================================================================
+     DELIVERY — cards stack as you scroll (desktop)
+  ================================================================ */
+  function initStacks() {
+    if (!motionOK()) return;
+    var mm = gsap.matchMedia();
+    mm.add('(min-width: 52rem)', function () {
+      $$('[data-stack]').forEach(function (stack) {
+        var cards = $$('.delivery__card', stack);
+        var section = stack.closest('.section');
+        if (section) section.style.contentVisibility = 'visible';
+        cards.forEach(function (card, i) {
+          card.style.position = 'sticky';
+          card.style.top = 'calc(var(--bar-h) + ' + (1.5 + i * 1.25) + 'rem)';
+          if (i === cards.length - 1) return;
+          gsap.to(card, {
+            scale: 0.94 - (cards.length - 2 - i) * 0.02,
+            '--dim': 0.7,
+            ease: 'none',
+            scrollTrigger: {
+              trigger: cards[i + 1],
+              start: 'top bottom-=10%',
+              end: 'top top+=' + Math.round(headerOffset() + 40),
+              scrub: true
+            }
+          });
+        });
+        return function () {
+          cards.forEach(function (c) { c.style.position = ''; c.style.top = ''; });
+        };
+      });
+    });
+    /* Mobile: a simple rise-in per card */
+    mm.add('(max-width: 51.999rem)', function () {
+      $$('.delivery__card').forEach(function (card) {
+        gsap.from(card, { y: 40, opacity: 0, duration: 0.8, ease: 'power3.out', scrollTrigger: { trigger: card, start: 'top 92%', once: true } });
+      });
+    });
+  }
+
+  /* ================================================================
+     COUNTERS
+  ================================================================ */
+  function initCounters() {
+    if (!motionOK()) return;
+    $$('[data-count]').forEach(function (el) {
+      var to = parseInt(el.getAttribute('data-count'), 10) || 0;
+      var obj = { v: 0 };
+      el.textContent = '0';
+      gsap.to(obj, {
+        v: to, duration: 1.4, ease: 'power2.out',
+        onUpdate: function () { el.textContent = String(Math.round(obj.v)); },
+        scrollTrigger: { trigger: el, start: 'top 92%', once: true }
+      });
+    });
+  }
+
+  /* ================================================================
+     HOME SCROLL SEQUENCE — Mobilize / Execute / Close Out
+     One timeline, 0–100 units = 0–100% of the pinned scroll.
+       0–10  Open        10–30 Mobilize     30–60 Execute
+       60–75 Close out   75–92 Footprint    92–100 Resolve
+
+     Performance model: the artwork is three stacked SVG layers that
+     share one 1000 x 640 coordinate system.
+       site  grid, markers, building, outline  (small; repaints in 1–4)
+       map   the ~1,000-cell US silhouette     (rasterised once, then
+                                                only moved/faded)
+       net   hubs, partner lines, resolve ring (small; repaints in 5–6)
+     Every camera move is a CSS transform on a whole layer, which the
+     GPU composites without repainting anything.
+  ================================================================ */
+  function initSequence() {
+    var seq = $('[data-seq]');
+    if (!seq || !motionOK()) return;
+
+    var pin = $('[data-seq-pin]', seq);
+    var layer = function (n) { return $('[data-layer="' + n + '"]', seq); };
+    var siteL = layer('site'), mapL = layer('map'), netL = layer('net');
+    var netSvg = $('[data-seq-svg]', seq);
+    var g = function (name) { return $('[data-g="' + name + '"]', seq); };
+    var nc = netSvg.getAttribute('data-nc').split(' ').map(Number);
+    var rowsY = netSvg.getAttribute('data-rows').split(',').map(Number);
+
+    var open = g('open'), grid = g('grid'), markers = g('markers'), building = g('building');
+    var outline = g('outline'), callout = g('callout'), net = g('net'), ring = g('ring');
+    var openEdge = $('.seq-open__edge', open), openGlow = $('.seq-open__glow', open);
+    var cells = $$('polygon', grid);
+    var markerEls = $$('[data-marker]', markers);
+    var rows = $$('[data-row]', building);
+    var ringCells = $$('polygon', ring);
+    var netLines = $$('.seq-net__line', net);
+    var netNodes = $$('.seq-net__node', net);
+    var hub = function (id) { return $('[data-hub="' + id + '"]', net); };
+
+    var beat = function (name) { return $('[data-beat="' + name + '"]', seq); };
+    var B = {
+      open: beat('open'), mobilize: beat('mobilize'), execute: beat('execute'),
+      closeout: beat('closeout'), footprint: beat('footprint'), resolve: beat('resolve')
+    };
+    var order = ['open', 'mobilize', 'execute', 'closeout', 'footprint', 'resolve'];
+    var caps = $$('[data-cap]', seq);
+    var rail = $$('[data-rail]', seq);
+    var logo = $('.seq__logo', seq);
+    var resolveText = $$('.seq__resolve-line, .seq__cta', seq);
+    var mobile = window.matchMedia('(max-width: 55.999rem)');
+
+    /* Decode the resolve logo up front so the last beat never waits on it. */
+    if (logo) { logo.loading = 'eager'; if (logo.decode) logo.decode().catch(function () {}); }
+
+    /* Artboard point -> pixel position inside an untransformed layer.
+       The net layer is never scaled, so its CTM is the reference. */
+    function toLayer(x, y) {
+      var m = netSvg.getScreenCTM();
+      var r = netL.getBoundingClientRect();
+      if (!m) return { x: 0, y: 0 };
+      return { x: m.a * x + m.c * y + m.e - r.left, y: m.b * x + m.d * y + m.f - r.top };
+    }
+    var SITE_ZOOM = 1.45;
+    var END_SCALE = 0.04;
+
+    /* Where the site layer must move so the building lands on NC. */
+    function siteShift(axis) {
+      var r = netL.getBoundingClientRect();
+      var c = { x: r.width / 2, y: r.height / 2 };
+      var b = toLayer(500, 400);
+      var n = toLayer(nc[0], nc[1]);
+      return n[axis] - c[axis] - END_SCALE * (b[axis] - c[axis]);
+    }
+    function ncOrigin() { var n = toLayer(nc[0], nc[1]); return n.x + 'px ' + n.y + 'px'; }
+
+    /* ---- Intro (plays on load, not scroll-bound) ------------------- */
+    gsap.set(siteL, { scale: SITE_ZOOM, transformOrigin: '50% 50%' });
+    gsap.fromTo(openEdge, { strokeDasharray: 1, strokeDashoffset: 1 },
+      { strokeDashoffset: 0, duration: 1.6, ease: 'power3.inOut', delay: 0.15 });
+    gsap.fromTo(openGlow, { opacity: 0 }, { opacity: 1, duration: 1.2, ease: 'power2.out', delay: 0.9 });
+    gsap.from($$('.seq__kicker, .seq__sub', B.open), { y: 16, opacity: 0, duration: 0.8, ease: 'expo.out', stagger: 0.1, delay: 0.35 });
+
+    var ringOffsets = ringCells.map(function (c) {
+      var bb = c.getBBox();
+      return { x: 500 - (bb.x + bb.width / 2), y: 320 - (bb.y + bb.height / 2) };
+    });
+
+    var tl = gsap.timeline({ defaults: { ease: 'none' } });
+    var inBeat = function (el, at) { tl.fromTo(el, { opacity: 0, y: 32 }, { opacity: 1, y: 0, duration: 4, ease: 'power3.out' }, at); };
+    var outBeat = function (el, at) { tl.to(el, { opacity: 0, y: -32, duration: 3, ease: 'power2.in' }, at); };
+
+    /* 0–10 OPEN */
+    outBeat(B.open, 7);
+
+    /* 10–30 MOBILIZE: the cell becomes the centre of a site grid */
+    tl.to(open, { scale: 24 / 70, svgOrigin: '500 320', duration: 6, ease: 'power3.inOut' }, 9);
+    tl.to(openEdge, { stroke: '#8A8C94', duration: 4 }, 10);
+    tl.to(openGlow, { opacity: 0, duration: 3 }, 9);
+    tl.set(grid, { opacity: 1 }, 10);
+    tl.fromTo(cells, { scale: 0.6, opacity: 0, transformOrigin: '50% 50%' }, {
+      scale: 1, opacity: 1, duration: 3, ease: 'power3.out',
+      stagger: function (i, el) { return (+el.getAttribute('data-ring') - 1) * 2 + (i % 5) * 0.1; }
+    }, 11);
+    inBeat(B.mobilize, 12);
+    tl.set(markers, { opacity: 1 }, 20);
+    tl.fromTo(markerEls, { y: -60, opacity: 0 }, { y: 0, opacity: 1, duration: 2.2, stagger: 0.9, ease: 'back.out(2.2)' }, 20);
+
+    /* 30–60 EXECUTE: ground tilts, facade extrudes row by row */
+    outBeat(B.mobilize, 28);
+    tl.to(markers, { opacity: 0, duration: 3 }, 29);
+    tl.to(open, { opacity: 0, duration: 3 }, 29);
+    tl.to(grid, { y: 180, scaleY: 0.3, svgOrigin: '500 320', duration: 6, ease: 'power3.inOut' }, 30);
+    inBeat(B.execute, 32);
+    tl.set(building, { opacity: 1 }, 34);
+    tl.set(callout, { opacity: 1, y: rowsY[0] }, 34);
+    rows.forEach(function (row, r) {
+      var at = 35 + r * 5;
+      tl.fromTo(row, { scaleY: 0, transformOrigin: '50% 100%' }, { scaleY: 1, duration: 2.6, ease: 'power3.out' }, at);
+      tl.fromTo($$('polygon', row), { fillOpacity: 0 }, { fillOpacity: 1, duration: 1.6, stagger: 0.08 }, at + 1.2);
+      if (r > 0) tl.to(callout, { y: rowsY[r], duration: 1.2, ease: 'power2.inOut' }, at + 1.4);
+    });
+
+    /* 60–75 CLOSE OUT: one orange trace around the finished building */
+    outBeat(B.execute, 59);
+    tl.to(callout, { opacity: 0, duration: 2 }, 60);
+    tl.set(outline, { opacity: 1 }, 61);
+    tl.fromTo(outline, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 7, ease: 'power1.inOut' }, 61);
+    inBeat(B.closeout, 62);
+    tl.to(outline, { stroke: '#8A8C94', duration: 2.5 }, 69.5);
+
+    /* 75–92 FOOTPRINT: the camera pulls back; the site shrinks onto NC */
+    outBeat(B.closeout, 73.5);
+    tl.to(siteL, {
+      scale: END_SCALE,
+      x: function () { return siteShift('x'); },
+      y: function () { return siteShift('y'); },
+      duration: 6.5, ease: 'power3.inOut'
+    }, 75);
+    tl.to(siteL, { opacity: 0, duration: 1.5 }, 80);
+    tl.fromTo(mapL, { opacity: 0.001, scale: 1.6, transformOrigin: ncOrigin },
+      { opacity: 1, scale: 1, duration: 6.5, ease: 'power3.inOut' }, 75);
+    tl.fromTo(netL, { opacity: 0.001 }, { opacity: 1, duration: 0.5 }, 79);
+    inBeat(B.footprint, 77);
+    ['nc', 'tx', 'fl'].forEach(function (id, i) {
+      var h = hub(id);
+      if (!h) return;
+      var at = 80 + i * 2;
+      tl.fromTo($('.seq-hub__dot', h), { scale: 0.4, opacity: 0, transformOrigin: '50% 50%' }, { scale: 1, opacity: 1, duration: 1.2, ease: 'back.out(3)' }, at);
+      tl.fromTo($('.seq-hub__pulse', h), { attr: { r: 8 }, opacity: 0.95 }, { attr: { r: 46 }, opacity: 0, duration: 2.6, ease: 'power2.out' }, at);
+    });
+    tl.fromTo(netLines, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.6, stagger: 0.2, ease: 'power1.inOut' }, 85);
+    tl.fromTo(netNodes, { scale: 0.4, opacity: 0, transformOrigin: '50% 50%' }, { scale: 1, opacity: 1, duration: 1, stagger: 0.2 }, 86);
+    tl.fromTo($$('[data-loc]', B.footprint), { opacity: 0.3 }, { opacity: 1, duration: 1.2, stagger: 2 }, 79.5);
+    tl.fromTo($$('.seq__sectors li', B.footprint), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 1.4, stagger: 1.1, ease: 'power3.out' }, 85.5);
+
+    /* 92–100 RESOLVE: hex cells collapse into the real logo */
+    outBeat(B.footprint, 91);
+    tl.to(mapL, { opacity: 0.001, duration: 3 }, 91.5);
+    tl.to(net, { opacity: 0, duration: 2.5 }, 91.5);
+    tl.set(ring, { opacity: 1 }, 92);
+    tl.fromTo(ringCells, { scale: 0.5, opacity: 0, transformOrigin: '50% 50%' }, { scale: 1, opacity: 1, duration: 1.4, stagger: 0.07, ease: 'back.out(1.8)' }, 92);
+    tl.to(ringCells, {
+      x: function (i) { return ringOffsets[i].x; },
+      y: function (i) { return ringOffsets[i].y; },
+      scale: 0.15, opacity: 0, duration: 2.8, stagger: 0.04, ease: 'power3.in'
+    }, 94);
+    tl.to(B.resolve, { opacity: 1, duration: 2.4 }, 95.5);
+    if (logo) tl.fromTo(logo, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 2.6, ease: 'expo.out' }, 96);
+    tl.fromTo(resolveText, { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 1.8, stagger: 0.5, ease: 'power3.out' }, 97.2);
+    tl.to({}, { duration: 1 }, 99.9);
+
+    /* ---- UI state that follows the playhead ------------------------ */
+    var bounds = [10, 30, 60, 75, 92, 101];
+    var lastBeat = -1, lastCap = -2;
+    function sync(p) {
+      var P = p * 100;
+      var b = 0;
+      while (P >= bounds[b] && b < bounds.length - 1) b++;
+      if (b !== lastBeat) {
+        order.forEach(function (name, i) { if (B[name]) B[name].setAttribute('data-active', i === b ? 'true' : 'false'); });
+        rail.forEach(function (li) { li.setAttribute('data-on', +li.getAttribute('data-rail') === b ? 'true' : 'false'); });
+        seq.setAttribute('data-light', b === order.length - 1 ? 'true' : 'false');
+        lastBeat = b;
+      }
+      var ci = P < 35 ? -1 : P >= 60 ? caps.length : clamp(Math.floor((P - 35) / 5), 0, caps.length - 1);
+      if (ci !== lastCap) {
+        caps.forEach(function (li, i) {
+          li.setAttribute('data-on', i === ci ? 'true' : 'false');
+          li.setAttribute('data-done', i < ci ? 'true' : 'false');
+        });
+        lastCap = ci;
+      }
+    }
+    sync(0);
+
+    var st = ST.create({
+      trigger: seq,
+      pin: pin,
+      start: 'top top',
+      end: function () { return '+=' + Math.round(window.innerHeight * (mobile.matches ? 3.2 : 4.4)); },
+      scrub: 0.35,
+      animation: tl,
+      anticipatePin: 1,
+      invalidateOnRefresh: true,
+      onUpdate: function (self) { sync(self.progress); }
+    });
+
+    /* Keyboard users tabbing to a control inside a not-yet-visible beat
+       are scrolled to where that beat is on screen. */
+    var atFor = { open: 0, mobilize: 0.2, execute: 0.45, closeout: 0.68, footprint: 0.86, resolve: 0.995 };
+    seq.addEventListener('focusin', function (e) {
+      var el = e.target.closest('[data-beat]');
+      if (!el) return;
+      var at = atFor[el.getAttribute('data-beat')];
+      if (at == null) return;
+      var y = st.start + (st.end - st.start) * at;
+      if (Math.abs(window.scrollY - y) > 40) scrollToY(y);
+    });
+  }
+
+  /* ================================================================
+     IDLE LOOPS — pause CSS loops off-screen / in hidden tabs
   ================================================================ */
   function initAnimationIdling() {
-    var loops = document.querySelectorAll('[data-anim-loop]');
-    if (!loops.length) return;
-
-    var setIdle = function (el, idle) {
-      var next = idle ? 'true' : 'false';
-      if (el.getAttribute('data-anim-idle') !== next) el.setAttribute('data-anim-idle', next);
-    };
-
-    if ('IntersectionObserver' in window) {
-      var io = new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) { setIdle(entry.target, !entry.isIntersecting); });
-      }, { rootMargin: '10% 0px' });
-      Array.prototype.forEach.call(loops, function (el) { io.observe(el); });
-    }
-
-    /* Nothing should keep animating in a background tab. */
-    document.addEventListener('visibilitychange', function () {
-      Array.prototype.forEach.call(loops, function (el) {
-        if (document.hidden) setIdle(el, true);
-      });
-      if (!document.hidden) wake();
+    var loops = $$('[data-anim-loop]');
+    if (!loops.length || !('IntersectionObserver' in window)) return;
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (entry) { entry.target.setAttribute('data-anim-idle', entry.isIntersecting ? 'false' : 'true'); });
     });
-  }
-
-  /* ================================================================
-     POINTER PARALLAX — a few pixels of depth, pointer only
-  ================================================================ */
-  function initParallax() {
-    if (!motionOK()) return;
-    if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-
-    var targetX = 0, targetY = 0, x = 0, y = 0;
-
-    window.addEventListener('pointermove', function (e) {
-      targetX = (e.clientX / window.innerWidth) * 2 - 1;
-      targetY = (e.clientY / window.innerHeight) * 2 - 1;
-      wake();
-    }, { passive: true });
-
-    addTicker(function () {
-      x = lerp(x, targetX, 0.07);
-      y = lerp(y, targetY, 0.07);
-      root.style.setProperty('--px', x.toFixed(4));
-      root.style.setProperty('--py', y.toFixed(4));
-      return Math.abs(x - targetX) > 0.0015 || Math.abs(y - targetY) > 0.0015;
-    });
-  }
-
-  /* ================================================================
-     PRELOADER
-     Only present on pages with an eager film stage. It waits on real
-     buffering, reports real progress, and always lets go.
-  ================================================================ */
-  function initPreloader() {
-    var pre = document.querySelector('[data-preloader]');
-    if (!pre) return;
-
-    /* Reduced motion gets no film to wait on, and the preloader is
-       hidden by CSS there. Without this it would still lock the page
-       scroll behind an invisible overlay. */
-    if (!motionOK()) { pre.remove(); return; }
-
-    var fill = pre.querySelector('[data-preloader-fill]');
-    var video = document.querySelector('[data-stage][data-eager="true"] [data-video]');
-    var done = false;
-    var pct = 0;
-
-    function finish() {
-      if (done) return;
-      done = true;
-      pre.setAttribute('data-done', 'true');
-      if (fill) fill.style.inlineSize = '100%';
-      document.body.style.overflow = '';
-      if (lenis) lenis.start();
-      /* Hand focus to the top of the page so keyboard order is sane */
-      window.setTimeout(function () { pre.remove(); }, 700);
-    }
-
-    document.body.style.overflow = 'hidden';
-    if (lenis) lenis.stop();
-
-    /* Report whatever the browser will tell us; creep forward so the
-       bar never looks frozen on a slow connection. */
-    var creep = window.setInterval(function () {
-      var real = 0;
-      if (video && video.buffered && video.buffered.length && video.duration) {
-        real = (video.buffered.end(video.buffered.length - 1) / video.duration) * 100;
-      }
-      pct = Math.max(pct + 3, real);
-      pct = Math.min(pct, 96);
-      if (fill) fill.style.inlineSize = pct + '%';
-    }, 120);
-
-    function ok() { window.clearInterval(creep); finish(); }
-
-    if (video) {
-      if (video.readyState >= 3) ok();
-      else {
-        video.addEventListener('canplaythrough', ok, { once: true });
-        video.addEventListener('error', ok, { once: true });
-      }
-    }
-    window.addEventListener('load', function () { window.setTimeout(ok, 400); });
-    /* Hard ceiling — the page must never be held hostage by a stall. */
-    window.setTimeout(ok, 4500);
+    loops.forEach(function (el) { io.observe(el); });
   }
 
   /* ================================================================
@@ -681,10 +745,9 @@
   }
 
   function initForms() {
-    var forms = document.querySelectorAll('[data-form]');
-    Array.prototype.forEach.call(forms, function (form) {
+    $$('[data-form]').forEach(function (form) {
       var status = form.querySelector('[data-form-status]');
-      var fields = Array.prototype.slice.call(form.querySelectorAll('.input, .select, .textarea'));
+      var fields = $$('.input, .select, .textarea', form);
       var attempted = false;
 
       fields.forEach(function (el) {
@@ -725,11 +788,11 @@
 
   function submitForm(form, status) {
     var leadType = form.getAttribute('data-lead-type') || 'general';
-    var subject = form.getAttribute('data-subject') || 'Website enquiry';
+    var subject = form.getAttribute('data-subject') || 'Website inquiry';
     var to = form.getAttribute('data-to') || 'service@ionic.contractors';
     var endpoint = form.getAttribute('data-endpoint');
 
-    /* Analytics hook — split CO vs teaming vs subcontractor leads.
+    /* Analytics hook — split agency vs teaming vs subcontractor leads.
        Fires into the dataLayer whether or not GA4 is configured yet. */
     window.dataLayer = window.dataLayer || [];
     window.dataLayer.push({ event: 'lead_submit', lead_type: leadType, form_id: form.id || null });
@@ -758,7 +821,6 @@
 
     var body = lines.join('\n');
 
-    /* If a real endpoint is ever wired up, it takes over from here. */
     if (endpoint) {
       var data = new FormData(form);
       data.append('lead_type', leadType);
@@ -787,11 +849,11 @@
     if (!text) return;
     if (mailHref) {
       text.innerHTML = 'Your details are ready to send. Your email application should open with the message ' +
-        'pre-filled — press send to deliver it. If nothing opened, ' +
+        'pre-filled; press send to deliver it. If nothing opened, ' +
         '<a href="' + mailHref + '">click here to open it manually</a> or email ' +
         '<a href="mailto:service@ionic.contractors">service@ionic.contractors</a> directly.';
     } else {
-      text.textContent = 'Thank you — your enquiry has been received. We respond to agency and teaming enquiries promptly, usually the same business day.';
+      text.textContent = 'Thank you. Your inquiry has been received. We respond to agency, owner, and teaming inquiries promptly, usually the same business day.';
       form.reset();
     }
     status.focus && status.focus();
@@ -802,16 +864,29 @@
   ================================================================ */
   function boot() {
     initLenis();
+    initAnchors();
     initHeader();
+    initMenus();
     initDrawer();
     initAccordions();
-    initReveal();
-    initStages();
-    initAnimationIdling();
-    initParallax();
     initCopy();
     initForms();
-    initPreloader();
+    initAnimationIdling();
+
+    if (motionOK()) {
+      initSequence();
+      initSplits();
+      initReveal();
+      initPageHero();
+      initMarquees();
+      initStacks();
+      initCounters();
+      /* Fonts and late images change layout: re-measure once settled. */
+      window.addEventListener('load', function () { ST.refresh(); });
+      if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { ST.refresh(); });
+    } else {
+      initReveal();
+    }
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

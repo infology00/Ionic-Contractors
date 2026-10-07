@@ -5,9 +5,7 @@
      node preview.mjs 8080       pick a port
 
    The site is plain relative-path HTML, so you can also just open
-   index.html in a browser. Use this when you want the video scrubbing
-   to work properly: that needs HTTP range requests, which the
-   file:// protocol does not provide.
+   index.html in a browser; this server just mirrors a real host.
 ================================================================== */
 
 import { createServer } from 'node:http';
@@ -30,7 +28,8 @@ const MIME = {
   '.png': 'image/png',
   '.jpg': 'image/jpeg',
   '.webp': 'image/webp',
-  '.mp4': 'video/mp4',
+  '.ico': 'image/x-icon',
+  '.pdf': 'application/pdf',
   '.woff2': 'font/woff2',
 };
 
