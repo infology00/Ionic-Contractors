@@ -1,5 +1,5 @@
 ===============================================================================
-IONIC CONTRACTORS - WEBSITE  (V3)
+IONIC CONTRACTORS - WEBSITE  (V5)
 Veteran-owned SDVOSB general contractor · federal, state & local, private
 ===============================================================================
 
@@ -51,7 +51,7 @@ programme…), or a double-escaped entity like "&amp;amp;".
   404.html
 
   css/site.css                     whole stylesheet, minified (built)
-  js/app.js                        site behaviour (built from source/js)
+  js/app.js                        site behavior (built from source/js)
   js/gsap-3.15.0.min.js            GSAP core        } self-hosted,
   js/ScrollTrigger-3.15.0.min.js   ScrollTrigger    } version-pinned
   js/lenis-1.1.18.min.js           smooth scrolling }
@@ -80,7 +80,7 @@ programme…), or a double-escaped entity like "&amp;amp;".
 
 From the Ionic Brand Identity Standards and the round-2 handoff:
 
-  Colours   black #0B0B0C · graphite #2E2E33 · light gray #F3F4F6 · white
+  Colors   black #0B0B0C · graphite #2E2E33 · light gray #F3F4F6 · white
             Ionic orange #FC5809 is the ONLY accent.
   Orange    one orange element per screen: the animation highlight OR the
             primary button, never both. Everything else is black/graphite/
@@ -88,7 +88,7 @@ From the Ionic Brand Identity Standards and the round-2 handoff:
             --c-orange and is used only by .btn--primary, the animation and
             the focus ring. Button text on orange is black (6.4:1, AA).
   Logo      always the supplied files, never redrawn or recoloured. Full
-            colour on light backgrounds, reversed white on dark. Header logo
+            color on light backgrounds, reversed white on dark. Header logo
             is 152px wide (brand minimum for the horizontal lockup: 150px).
   Type      Archivo, one self-hosted variable file (width 62-125,
             weight 100-900). Headlines use the expanded width, which echoes
@@ -104,21 +104,30 @@ gets the dark palette (hero, inner-page heroes, CTA band, footer).
 
 
 -------------------------------------------------------------------------------
-4. THE HOME SCROLL SEQUENCE
+4. THE HOME SCROLL SEQUENCE: "FROM CONTRACT TO KEYS"
 -------------------------------------------------------------------------------
 
-Built in code (SVG + GSAP ScrollTrigger), no video. The section pins and
-one timeline scrubs through six beats as you scroll:
+One project followed from paperwork to handover, then the proof behind
+it. The point for a buyer: hand Ionic the solicitation, get back a
+finished facility, and every claim along the way can be verified.
+Built in code (SVG + GSAP ScrollTrigger), no video.
 
-  0–10%    Open        one orange-edged hex cell; the <h1>
-  10–30%   Mobilize    cells tile into a site-plan grid; orange markers drop
-  30–60%   Execute     the grid tilts to ground; a facade extrudes row by
-                       row, one row per capability line, with a callout
-  60–75%   Close out   an orange trace runs once around the building
-  75–92%   Footprint   the viewBox "camera" pulls back to a hex-tile US map;
-                       NC pulses, then TX and FL, then the partner network;
-                       Federal → State → County/municipal → Private
-  92–100%  Resolve     cells collapse; the real logo + one orange CTA
+  0-10%    Contract    a solicitation; its SDVOSB set-aside line is lit
+  10-28%   Mobilize    the paper unfolds into a hex site plan; crews and
+                       equipment stage (orange markers)
+  28-58%   Execute     the plan tilts to ground and a building rises,
+                       one row per capability line, with a callout
+  58-72%   Close out   an orange trace runs once around the building,
+                       then the TURNED OVER stamp lands
+  72-86%   Footprint   pull back to the hex US map: NC, TX, FL, partner
+                       network; Federal, State, County & municipal, Private
+  86-96%   Proof       seven facts lock into a honeycomb: SDVOSB, SAM, UEI,
+                       CAGE, NAICS, zero-incident safety, three offices
+  96-100%  Resolve     the honeycomb collapses into the real logo + CTA
+
+Reduced motion or no JS: the same beats render as static panels, each with
+its final frame. Mobile: shorter scroll, simplified network, compact proof
+list on short screens.
 
 Performance: the artwork is three stacked SVG layers (map, network,
 site) sharing one coordinate system. Camera moves are CSS transforms on a

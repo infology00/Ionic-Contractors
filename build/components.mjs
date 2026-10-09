@@ -60,9 +60,9 @@ export const lattice = () => `<div class="page-hero__lattice" aria-hidden="true"
 
 /* ==================================================================
    LOGO — always the supplied files, never redrawn or recoloured.
-     color   full-colour horizontal lockup (light backgrounds)
-     white   reversed one-colour lockup (dark backgrounds)
-     stacked full-colour stacked lockup
+     color   full-color horizontal lockup (light backgrounds)
+     white   reversed one-color lockup (dark backgrounds)
+     stacked full-color stacked lockup
 ================================================================== */
 const LOGOS = {
   color:   { base: 'logo-color',   widths: [320, 480, 960], ratio: 960 / 329 },

@@ -131,7 +131,7 @@ export const capabilities = [
     points: [
       'New construction and additions',
       'Renovation, repair, and modernization',
-      'Interior build-out and fit-out',
+      'Interior build-out and tenant improvements',
       'Electrical, plumbing, and HVAC',
       'Specialty trade work',
       'Documentation and compliance throughout',

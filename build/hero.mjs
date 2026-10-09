@@ -1,28 +1,25 @@
 /* ==================================================================
-   HOME — SCROLL SEQUENCE ("Mobilize / Execute / Close Out")
+   HOME - SCROLL SEQUENCE: "FROM CONTRACT TO KEYS"
    ------------------------------------------------------------------
-   One scroll-driven sequence built entirely in code (SVG + GSAP), so
-   it stays crisp, fast and on-palette. Six beats:
+   One project, followed from paperwork to handover, then the proof
+   behind it. Built entirely in code (SVG + GSAP).
 
-     1 Open       0–10%   single orange-edged hex; headline
-     2 Mobilize  10–30%   hex cells tile into a site-plan grid; markers drop
-     3 Execute   30–60%   cells extrude into a facade row by row; callouts
-     4 Close out 60–75%   orange trace runs once around the finished outline
-     5 Footprint 75–92%   building shrinks to NC on a hex-tile US map;
-                          NC → TX → FL pulse, partner network spreads
-     6 Resolve   92–100%  hex cells collapse; the real logo file + CTA
+     Contract   0-10%   a solicitation; its SDVOSB set-aside line lit
+     Mobilize  10-28%   the paper unfolds into a hex site plan; crews stage
+     Execute   28-58%   the plan rises into a building, one capability/row
+     Close out 58-72%   one orange trace, then the TURNED OVER stamp
+     Footprint 72-86%   pull back to the US map: NC, TX, FL, partners
+     Proof     86-96%   seven verifiable facts lock into a honeycomb
+     Resolve   96-100%  the honeycomb collapses into the real logo + CTA
 
-   All copy is real HTML in the DOM (SEO / Section 508). The artwork is
-   aria-hidden. With JS off or prefers-reduced-motion, CSS lays the
-   beats out as static panels, each showing its final frame (the
-   <symbol>s defined below).
-
-   This module also returns the map geometry so it is generated once,
-   at build time — no map file is fetched at runtime.
+   All copy is real HTML (SEO / Section 508); artwork is aria-hidden.
+   With JS off or reduced motion, each beat is a static panel showing
+   its final frame (the <symbol>s below). The map geometry is generated
+   here at build time; nothing is fetched at runtime.
 ================================================================== */
-
 import { capabilities, locations, capStatement, site } from './site.mjs';
 import { btn, esc, logoImg } from './components.mjs';
+import { PHOSPHOR } from './icons.mjs';
 
 const W = 1000, H = 640;
 const SQ3 = Math.sqrt(3);
@@ -114,7 +111,7 @@ const network = NETWORK.map(([from, lon, lat, mobile]) => {
 /* ------------------------------------------------------------------
    SITE GEOMETRY (beats 1–4)
 ------------------------------------------------------------------- */
-const C = { x: 500, y: 320 };            // composition centre
+const C = { x: 500, y: 320 };            // composition center
 /* The "camera": tight on the site for beats 1–4, then the viewBox
    itself is tweened out to the full artboard for the map. */
 const SITE_VIEW = '170 96 660 422';
@@ -156,6 +153,71 @@ const ringCells = Array.from({ length: 12 }, (_, i) => {
   return { x: C.x + Math.cos(a) * 230, y: C.y + Math.sin(a) * 180 };
 });
 
+/* ==================================================================
+   THE STORY: "From contract to keys", ending in proof.
+     Contract   a solicitation, its SDVOSB set-aside line lit
+     Mobilize   the paper unfolds into a site plan; crews stage
+     Execute    the plan rises into a building, one capability per row
+     Close out  one orange trace, then the TURNED OVER stamp
+     Footprint  pull back: then we do it again, nationwide
+     Proof      seven verifiable facts lock into a honeycomb
+     Resolve    the honeycomb collapses into the real logo
+================================================================== */
+
+/* ---- The solicitation (site layer, artboard coords) --------------- */
+const DOC = { x: 385, y: 160, w: 230, h: 304 };
+const docLines = [
+  [DOC.x + 22, DOC.y + 64, 150], [DOC.x + 22, DOC.y + 80, 186], [DOC.x + 22, DOC.y + 96, 120],
+  [DOC.x + 22, DOC.y + 176, 186], [DOC.x + 22, DOC.y + 192, 160], [DOC.x + 22, DOC.y + 208, 178],
+  [DOC.x + 22, DOC.y + 224, 132], [DOC.x + 22, DOC.y + 240, 170],
+];
+const docSVG = (attrs = '') => `<g class="seq-doc" ${attrs}>
+  <rect class="seq-doc__sheet" x="${DOC.x}" y="${DOC.y}" width="${DOC.w}" height="${DOC.h}" rx="3"/>
+  <rect class="seq-doc__title" x="${DOC.x + 22}" y="${DOC.y + 26}" width="104" height="12" rx="1.5"/>
+  <rect class="seq-doc__meta" x="${DOC.x + DOC.w - 70}" y="${DOC.y + 26}" width="48" height="12" rx="1.5"/>
+  ${docLines.map(([x, y, w]) => `<rect class="seq-doc__line" x="${x}" y="${y}" width="${w}" height="5" rx="2.5"/>`).join('')}
+  <g class="seq-doc__flag">
+    <rect class="seq-doc__flag-box" x="${DOC.x + 16}" y="${DOC.y + 116}" width="${DOC.w - 32}" height="40" rx="2" pathLength="1"/>
+    <text class="seq-doc__flag-text" x="${DOC.x + 28}" y="${DOC.y + 141}">SDVOSB SET-ASIDE</text>
+  </g>
+  <line class="seq-doc__sign" x1="${DOC.x + 22}" y1="${DOC.y + 278}" x2="${DOC.x + 120}" y2="${DOC.y + 278}"/>
+</g>`;
+
+/* ---- Turnover stamp ----------------------------------------------- */
+const stampSVG = (attrs = '') => `<g class="seq-stamp" ${attrs}>
+  <g transform="rotate(-8 500 392)">
+    <rect class="seq-stamp__box" x="380" y="362" width="240" height="60" rx="3"/>
+    <text class="seq-stamp__text" x="500" y="401" text-anchor="middle">TURNED OVER</text>
+  </g>
+</g>`;
+
+/* ---- Proof honeycomb (net layer, artboard coords) ----------------- */
+const PR = 82, PW = SQ3 * PR;
+export const proofs = [
+  { icon: 'seal',        label: 'SDVOSB certified', detail: 'SBA VetCert' },
+  { icon: 'certificate', label: 'SAM.gov registered', detail: 'Active' },
+  { icon: 'idcard',      label: 'UEI', detail: site.ids.uei, code: true },
+  { icon: 'barcode',     label: 'CAGE', detail: site.ids.cage, code: true },
+  { icon: 'building',    label: 'NAICS', detail: '236220 primary', code: true },
+  { icon: 'hardhat',     label: 'Zero-incident safety', detail: 'Planned before mobilization' },
+  { icon: 'pin',         label: '3 offices', detail: 'NC, TX, FL + partners' },
+];
+const proofPos = [
+  [0, 0], [-1, -1], [1, -1], [-2, 0], [2, 0], [-1, 1], [1, 1],     // center, then the ring
+].map(([dx, dy]) => ({ x: C.x + dx * PW / 2, y: C.y + dy * 1.5 * PR }));
+
+const proofSVG = (staticAll = false) => `<g class="seq-proof" data-g="proof">
+  ${proofs.map((p, i) => {
+    const { x, y } = proofPos[i];
+    const s = 60 / 256;
+    return `<g class="seq-pcell${staticAll ? ' is-locked' : ''}" data-pcell="${i}">
+      <polygon class="seq-pcell__hex" points="${hexPoints(x, y, PR - 3)}"/>
+      <g class="seq-pcell__icon" transform="translate(${f(x - 30)} ${f(y - 30)}) scale(${f(s * 1000) / 1000})">${PHOSPHOR[p.icon]}</g>
+    </g>`;
+  }).join('')}
+  <polygon class="seq-plock" data-g="plock" points="${hexPoints(C.x, C.y, PR - 3)}"/>
+</g>`;
+
 /* ------------------------------------------------------------------
    SVG PARTS — shared by the animated stage and the static frames
 ------------------------------------------------------------------- */
@@ -169,13 +231,6 @@ const buildingSVG = () => `<g class="seq-building" data-g="building">${rows.map(
   `<g class="seq-row" data-row="${r}">${row.cells.map((c) => `<polygon class="seq-bcell" points="${hexPoints(c.x, c.y, BR - 1.5)}"/>`).join('')}</g>`).join('')}</g>`;
 
 const outlineSVG = (cls = '') => `<path class="seq-outline ${cls}" data-g="outline" d="${outlineD}" pathLength="1"/>`;
-
-/* The opening cell. Its glow is a wide, faint stroke underneath; a CSS
-   drop-shadow filter here repainted the whole layer every frame. */
-const openSVG = (attrs = '') => `<g class="seq-open" ${attrs}>
-  <polygon class="seq-open__glow" points="${hexPoints(C.x, C.y, 70)}"/>
-  <polygon class="seq-open__edge" points="${hexPoints(C.x, C.y, 70)}" pathLength="1"/>
-</g>`;
 
 const netSVG = () => `<g class="seq-net">${network.map((n) => `<path class="seq-net__line${n.mobile ? '' : ' seq-desktop'}" d="${n.d}" pathLength="1"/>`).join('')}</g>
   <g class="seq-net-nodes">${network.map((n) => `<circle class="seq-net__node${n.mobile ? '' : ' seq-desktop'}" cx="${n.x}" cy="${n.y}" r="3.2"/>`).join('')}</g>
@@ -194,11 +249,12 @@ export function heroDefs() {
   return `<svg class="seq-defs" width="0" height="0" aria-hidden="true" focusable="false">
   <defs>
     <path id="seq-us" d="${map.d}"/>
-    <symbol id="frame-open" viewBox="${SITE_VIEW}">${openSVG()}</symbol>
+    <symbol id="frame-open" viewBox="${SITE_VIEW}">${docSVG('data-static')}</symbol>
     <symbol id="frame-mobilize" viewBox="${SITE_VIEW}">${gridSVG('is-static')}${markersSVG()}<polygon class="seq-cell is-center" points="${hexPoints(C.x, C.y, GR - 2)}"/></symbol>
     <symbol id="frame-execute" viewBox="${SITE_VIEW}"><g transform="${GROUND}">${gridSVG('is-static is-ground')}</g>${buildingSVG()}</symbol>
-    <symbol id="frame-closeout" viewBox="${SITE_VIEW}"><g transform="${GROUND}">${gridSVG('is-static is-ground')}</g>${buildingSVG()}${outlineSVG('is-static')}</symbol>
+    <symbol id="frame-closeout" viewBox="${SITE_VIEW}"><g transform="${GROUND}">${gridSVG('is-static is-ground')}</g>${buildingSVG()}${outlineSVG('is-static')}${stampSVG()}</symbol>
     <symbol id="frame-footprint" viewBox="0 0 ${W} ${H}"><use href="#seq-us" class="seq-us"/>${netSVG()}</symbol>
+    <symbol id="frame-proof" viewBox="${SITE_VIEW}">${proofSVG(true)}</symbol>
   </defs>
 </svg>`;
 }
@@ -217,7 +273,7 @@ export function heroSequence() {
     `<svg class="seq__svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" focusable="false" ${extra}>`;
 
   return `${heroDefs()}
-<section class="seq theme-dark" id="top" data-seq aria-label="How Ionic delivers: mobilize, execute, close out">
+<section class="seq theme-dark" id="top" data-seq aria-label="From contract to keys: how Ionic delivers a project">
   <div class="seq__pin" data-seq-pin>
 
     <!-- Three stacked layers sharing one coordinate system. Moving a
@@ -225,9 +281,9 @@ export function heroSequence() {
          actually changing ever repaints. -->
     <div class="seq__visual" aria-hidden="true">
       <div class="seq__layer seq__layer--map" data-layer="map">${svgOpen()}<use href="#seq-us" class="seq-us"/></svg></div>
-      <div class="seq__layer seq__layer--net" data-layer="net">${svgOpen(`data-seq-svg data-nc="${f(ncXY[0])} ${f(ncXY[1])}" data-rows="${rows.map((r) => f(r.y)).join(',')}"`)}
+      <div class="seq__layer seq__layer--net" data-layer="net">${svgOpen(`data-seq-svg data-nc="${f(ncXY[0])} ${f(ncXY[1])}" data-rows="${rows.map((r) => f(r.y)).join(',')}" data-proof="${proofPos.map((p) => f(p.x) + ' ' + f(p.y)).join(',')}"`)}
         <g data-g="net">${netSVG()}</g>
-        <g class="seq-ring" data-g="ring">${ringCells.map((c) => `<polygon class="seq-rcell" points="${hexPoints(c.x, c.y, 26)}"/>`).join('')}</g>
+        ${proofSVG()}
       </svg></div>
       <div class="seq__layer seq__layer--site" data-layer="site">${svgOpen()}
         ${gridSVG()}
@@ -238,7 +294,8 @@ export function heroSequence() {
           <line x1="${f(frame.r - 6)}" y1="0" x2="${f(calloutX + 46)}" y2="0"/>
           <circle cx="${f(calloutX + 52)}" cy="0" r="5"/>
         </g>
-        ${openSVG('data-g="open"')}
+        ${stampSVG('data-g="stamp"')}
+        ${docSVG('data-g="doc"')}
       </svg></div>
     </div>
 
@@ -249,8 +306,8 @@ export function heroSequence() {
           ${frameSVG('frame-open')}
           <div class="seq__text">
             <p class="seq__kicker">${esc(site.descriptor)}</p>
-            <h1 class="seq__title seq__title--hero" data-split>Veteran-owned. Built for public and private work.</h1>
-            <p class="seq__sub">General construction and support services for federal agencies, state and local governments, and private owners.</p>
+            <h1 class="seq__title seq__title--hero" data-split>From contract to keys.</h1>
+            <p class="seq__sub">Hand us the solicitation. We hand back a finished facility, for federal agencies, state and local governments, and private owners.</p>
           </div>
         </div>
 
@@ -258,8 +315,8 @@ export function heroSequence() {
           ${frameSVG('frame-mobilize')}
           <div class="seq__text">
             <p class="seq__label"><span class="seq__num">01</span>Mobilize</p>
-            <h2 class="seq__title">Every job starts with a plan on the ground.</h2>
-            <p class="seq__sub">Site plan, schedule, safety, and logistics are set before crews and equipment arrive.</p>
+            <h2 class="seq__title">The contract becomes a site plan.</h2>
+            <p class="seq__sub">Schedule, safety plan, and logistics are locked before crews and equipment arrive, staged where the work needs them.</p>
           </div>
         </div>
 
@@ -267,7 +324,7 @@ export function heroSequence() {
           ${frameSVG('frame-execute')}
           <div class="seq__text">
             <p class="seq__label"><span class="seq__num">02</span>Execute</p>
-            <h2 class="seq__title">Built row by row, to specification.</h2>
+            <h2 class="seq__title">The plan becomes a building.</h2>
             <ol class="seq__caps" aria-label="Capability lines">
               ${capabilities.map((c, i) => `<li data-cap="${i}"><span class="seq__cap-num">${String(i + 1).padStart(2, '0')}</span><span>${esc(c.callout)}</span></li>`).join('')}
             </ol>
@@ -278,8 +335,8 @@ export function heroSequence() {
           ${frameSVG('frame-closeout')}
           <div class="seq__text">
             <p class="seq__label"><span class="seq__num">03</span>Close out</p>
-            <h2 class="seq__title">On time, on budget, zero-incident turnover.</h2>
-            <p class="seq__sub">Punch lists closed, documentation delivered, and the facility handed over ready for use.</p>
+            <h2 class="seq__title">The building becomes yours.</h2>
+            <p class="seq__sub">On time, on budget, zero-incident turnover, with punch lists closed and every record in your file.</p>
           </div>
         </div>
 
@@ -287,7 +344,7 @@ export function heroSequence() {
           ${frameSVG('frame-footprint', `0 0 ${W} ${H}`)}
           <div class="seq__text">
             <p class="seq__label"><span class="seq__num">04</span>Footprint</p>
-            <h2 class="seq__title">Headquartered in North Carolina. Mobilized nationwide.</h2>
+            <h2 class="seq__title">Then we do it again, nationwide.</h2>
             <ul class="seq__locs">
               ${locations.map((l) => `<li data-loc="${l.id}"><strong>${esc(l.label)}</strong><span>${esc(l.role)}</span></li>`).join('')}
               <li data-loc="network"><strong>Multi-state</strong><span>Partner network</span></li>
@@ -298,13 +355,24 @@ export function heroSequence() {
           </div>
         </div>
 
+        <div class="seq__beat" data-beat="proof">
+          ${frameSVG('frame-proof')}
+          <div class="seq__text">
+            <p class="seq__label"><span class="seq__num">05</span>Proof</p>
+            <h2 class="seq__title">Every piece of it can be verified.</h2>
+            <ul class="seq__proofs">
+              ${proofs.map((p, i) => `<li data-proof="${i}"><strong>${esc(p.label)}</strong><span${p.code ? ' class="code"' : ''}>${esc(p.detail)}</span></li>`).join('')}
+            </ul>
+          </div>
+        </div>
+
       </div>
     </div>
 
     <div class="seq__resolve theme-light" data-beat="resolve">
       <div class="seq__resolve-inner wrap">
         ${logoImg('color', { cls: 'seq__logo', width: 480, sizes: '(min-width: 48rem) 26rem, 72vw', alt: 'Ionic Contractors' })}
-        <p class="seq__resolve-line">One accountable partner, from mobilization to closeout.</p>
+        <p class="seq__resolve-line">One accountable partner, from contract to keys.</p>
         <div class="btn-row seq__cta">
           ${btn(capHref, capLabel, { variant: 'primary', attrs: capAttrs })}
           ${btn('/contact/', 'Talk to our team', { variant: 'secondary' })}
@@ -313,7 +381,7 @@ export function heroSequence() {
     </div>
 
     <ol class="seq__rail" aria-hidden="true">
-      ${['Mobilize', 'Execute', 'Close out', 'Footprint'].map((l, i) => `<li data-rail="${i + 1}"><span>${l}</span></li>`).join('')}
+      ${['Mobilize', 'Execute', 'Close out', 'Footprint', 'Proof'].map((l, i) => `<li data-rail="${i + 1}"><span>${l}</span></li>`).join('')}
     </ol>
   </div>
 </section>`;

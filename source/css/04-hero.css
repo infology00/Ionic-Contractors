@@ -43,6 +43,26 @@
 .seq-rcell { fill: #2E2E33; stroke: #7A7C84; stroke-width: 1.4; }
 
 .seq__frame .seq-net__line { stroke-dashoffset: 0; }
+
+/* Solicitation */
+.seq-doc__sheet  { fill: #18181B; stroke: #5E6068; stroke-width: 1.5; }
+.seq-doc__title  { fill: #D9DADF; }
+.seq-doc__meta   { fill: #4A4B52; }
+.seq-doc__line   { fill: #3D3E45; }
+.seq-doc__sign   { stroke: #5E6068; stroke-width: 1.5; }
+.seq-doc__flag-box  { fill: rgb(var(--c-orange-rgb) / 9%); stroke: var(--c-orange); stroke-width: 2; }
+.seq-doc__flag-text { fill: #F3F4F6; font: 700 13px/1 var(--font-sans); font-stretch: 112%; letter-spacing: 0.14em; }
+
+/* Turnover stamp */
+.seq-stamp__box  { fill: rgb(11 11 12 / 82%); stroke: #F3F4F6; stroke-width: 2.5; }
+.seq-stamp__text { fill: #F3F4F6; font: 800 25px/1 var(--font-sans); font-stretch: 118%; letter-spacing: 0.16em; }
+
+/* Proof honeycomb */
+.seq-pcell__hex  { fill: #1E1E22; stroke: #4A4B52; stroke-width: 1.5; }
+.seq-pcell__icon { fill: #8A8C94; }
+.seq-pcell.is-locked .seq-pcell__hex { fill: #2E2E33; stroke: #8A8C94; }
+.seq-pcell.is-locked .seq-pcell__icon { fill: #F3F4F6; }
+.seq-plock { fill: none; stroke: var(--c-orange); stroke-width: 3; stroke-linejoin: round; opacity: 0; }
 @media (max-width: 47.999rem) { .seq-desktop { display: none; } }
 
 /* ---- Copy ---------------------------------------------------------- */
@@ -109,6 +129,15 @@
 .seq__sectors { display: flex; flex-wrap: wrap; gap: var(--s-2); margin-block-start: var(--s-5); }
 .seq__sectors li { padding: 0.375rem 0.75rem; border: 1px solid var(--c-line-strong); border-radius: var(--r-xs); font-size: var(--fs-sm); font-weight: 600; color: var(--c-text); }
 
+.seq__proofs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3) var(--s-6); max-inline-size: 30rem; }
+.seq__proofs li { display: flex; flex-direction: column; gap: 2px; padding-block-start: var(--s-2); border-block-start: 1px solid var(--c-line-mid); color: var(--c-text-3); transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+.seq__proofs li:last-child:nth-child(odd) { grid-column: 1 / -1; }
+.seq__proofs strong { font-size: var(--fs-sm); font-weight: 650; }
+.seq__proofs span { font-size: var(--fs-label); font-weight: 500; }
+.seq__proofs .code { color: inherit; font-weight: 500; }
+.seq__proofs li[data-on='true'] { color: var(--c-text); border-color: var(--c-orange); }
+.seq__proofs li[data-done='true'] { color: var(--c-text); }
+
 .seq__resolve { background: var(--brand-gray); }
 .seq__resolve-inner { display: grid; justify-items: center; text-align: center; gap: var(--s-6); }
 .seq__logo { inline-size: min(26rem, 72vw, 44svh * 2.9); block-size: auto; }
@@ -158,7 +187,7 @@ html:not(.motion-ok) .seq__title--hero { font-size: var(--fs-display); }
 
 /* Pre-GSAP state matches the timeline's first frame exactly */
 .js.motion-ok .seq__layer--site { transform: scale(1.45); transform-origin: 50% 50%; }
-/* 0.001, not 0: an opacity-0 layer may never be rasterised until it
+/* 0.001, not 0: an opacity-0 layer may never be rasterized until it
    first appears, which stalled the frame where the map fades in. */
 .js.motion-ok .seq__layer--map,
 .js.motion-ok .seq__layer--net { opacity: 0.001; }
@@ -167,7 +196,8 @@ html:not(.motion-ok) .seq__title--hero { font-size: var(--fs-display); }
 .js.motion-ok [data-g='building'],
 .js.motion-ok [data-g='outline'],
 .js.motion-ok [data-g='callout'],
-.js.motion-ok [data-g='ring'] { opacity: 0; }
+.js.motion-ok [data-g='stamp'],
+.js.motion-ok [data-g='proof'] { opacity: 0; }
 
 .js.motion-ok .seq__copy {
   position: absolute;
@@ -220,6 +250,9 @@ html:not(.motion-ok) .seq__title--hero { font-size: var(--fs-display); }
   .js.motion-ok .seq__locs strong { font-size: min(0.9375rem, 2.2svh); }
   .js.motion-ok .seq__sectors { margin-block-start: var(--s-3); }
   .js.motion-ok .seq__sectors li { font-size: var(--fs-label); padding: 0.25rem 0.5rem; }
+  .js.motion-ok .seq__proofs { gap: var(--s-2) var(--s-4); }
+  .js.motion-ok .seq__proofs strong { font-size: min(0.8125rem, 1.9svh); }
+  .js.motion-ok .seq__proofs span { font-size: min(0.6875rem, 1.6svh); }
 }
 /* Footprint carries the most copy: tighter type so it always fits */
 @media (max-width: 55.999rem) {
@@ -228,6 +261,8 @@ html:not(.motion-ok) .seq__title--hero { font-size: var(--fs-display); }
   .js.motion-ok [data-beat='footprint'] .seq__locs span { font-size: 0.6875rem; letter-spacing: 0.08em; }
 }
 @media (max-width: 55.999rem) and (max-height: 700px) {
+  .js.motion-ok .seq__proofs li { flex-direction: row; flex-wrap: wrap; align-items: baseline; gap: 0 0.4em; padding-block-start: 0.3rem; }
+  .js.motion-ok .seq__proofs span:not(.code) { display: none; }
   .js.motion-ok [data-beat='mobilize'] .seq__sub,
   .js.motion-ok [data-beat='closeout'] .seq__sub { display: none; }
 }

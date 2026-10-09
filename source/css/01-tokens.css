@@ -1,6 +1,6 @@
 /* ==================================================================
    IONIC CONTRACTORS — DESIGN TOKENS  (V3)
-   The single place colour, type, spacing, shape and motion live.
+   The single place color, type, spacing, shape and motion live.
    ------------------------------------------------------------------
    Brand standards: black, graphite #2E2E33, light gray #F3F4F6, white,
    and Ionic orange #FC5809 as the only accent.
@@ -180,7 +180,7 @@
 }
 
 /* Light surface nested inside a dark one (the hero's resolve frame,
-   where the full-colour logo needs a light ground). */
+   where the full-color logo needs a light ground). */
 .theme-light {
   --c-base: #FFFFFF; --c-surface: #F3F4F6; --c-surface-2: #FFFFFF; --c-surface-3: #E7E9EC;
   --c-line: rgb(11 11 12 / 9%); --c-line-mid: rgb(11 11 12 / 15%); --c-line-strong: rgb(11 11 12 / 32%);

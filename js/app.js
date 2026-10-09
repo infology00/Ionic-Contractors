@@ -1,5 +1,5 @@
 /* ==================================================================
-   IONIC CONTRACTORS — site behaviour
+   IONIC CONTRACTORS — site behavior
    ------------------------------------------------------------------
    Everything here is an enhancement. With this file removed the site
    still renders all of its content, all links work, and forms fall
@@ -436,17 +436,18 @@
   }
 
   /* ================================================================
-     HOME SCROLL SEQUENCE — Mobilize / Execute / Close Out
-     One timeline, 0–100 units = 0–100% of the pinned scroll.
-       0–10  Open        10–30 Mobilize     30–60 Execute
-       60–75 Close out   75–92 Footprint    92–100 Resolve
+     HOME SCROLL SEQUENCE: "From contract to keys"
+     One project followed from paperwork to handover, then the proof.
+     One timeline, 0-100 units = 0-100% of the pinned scroll.
+       0-10  Contract    10-28 Mobilize    28-58 Execute
+       58-72 Close out   72-86 Footprint   86-96 Proof   96-100 Resolve
 
      Performance model: the artwork is three stacked SVG layers that
      share one 1000 x 640 coordinate system.
-       site  grid, markers, building, outline  (small; repaints in 1–4)
-       map   the ~1,000-cell US silhouette     (rasterised once, then
-                                                only moved/faded)
-       net   hubs, partner lines, resolve ring (small; repaints in 5–6)
+       site  document, grid, building, stamp  (small; repaints early)
+       map   the ~1,000-cell US silhouette    (rasterized once, then
+                                               only moved/faded)
+       net   hubs, partner lines, proof cells (small; repaints late)
      Every camera move is a CSS transform on a whole layer, which the
      GPU composites without repainting anything.
   ================================================================ */
@@ -461,25 +462,24 @@
     var g = function (name) { return $('[data-g="' + name + '"]', seq); };
     var nc = netSvg.getAttribute('data-nc').split(' ').map(Number);
     var rowsY = netSvg.getAttribute('data-rows').split(',').map(Number);
+    var proofXY = netSvg.getAttribute('data-proof').split(',').map(function (p) { return p.split(' ').map(Number); });
 
-    var open = g('open'), grid = g('grid'), markers = g('markers'), building = g('building');
-    var outline = g('outline'), callout = g('callout'), net = g('net'), ring = g('ring');
-    var openEdge = $('.seq-open__edge', open), openGlow = $('.seq-open__glow', open);
+    var doc = g('doc'), grid = g('grid'), markers = g('markers'), building = g('building');
+    var outline = g('outline'), callout = g('callout'), stamp = g('stamp'), net = g('net'), proof = g('proof'), plock = g('plock');
     var cells = $$('polygon', grid);
     var markerEls = $$('[data-marker]', markers);
     var rows = $$('[data-row]', building);
-    var ringCells = $$('polygon', ring);
+    var pcells = $$('[data-pcell]', proof);
     var netLines = $$('.seq-net__line', net);
     var netNodes = $$('.seq-net__node', net);
     var hub = function (id) { return $('[data-hub="' + id + '"]', net); };
 
     var beat = function (name) { return $('[data-beat="' + name + '"]', seq); };
-    var B = {
-      open: beat('open'), mobilize: beat('mobilize'), execute: beat('execute'),
-      closeout: beat('closeout'), footprint: beat('footprint'), resolve: beat('resolve')
-    };
-    var order = ['open', 'mobilize', 'execute', 'closeout', 'footprint', 'resolve'];
+    var order = ['open', 'mobilize', 'execute', 'closeout', 'footprint', 'proof', 'resolve'];
+    var B = {};
+    order.forEach(function (n) { B[n] = beat(n); });
     var caps = $$('[data-cap]', seq);
+    var proofs = $$('[data-proof]', B.proof);
     var rail = $$('[data-rail]', seq);
     var logo = $('.seq__logo', seq);
     var resolveText = $$('.seq__resolve-line, .seq__cta', seq);
@@ -498,8 +498,6 @@
     }
     var SITE_ZOOM = 1.45;
     var END_SCALE = 0.04;
-
-    /* Where the site layer must move so the building lands on NC. */
     function siteShift(axis) {
       var r = netL.getBoundingClientRect();
       var c = { x: r.width / 2, y: r.height / 2 };
@@ -509,105 +507,120 @@
     }
     function ncOrigin() { var n = toLayer(nc[0], nc[1]); return n.x + 'px ' + n.y + 'px'; }
 
-    /* ---- Intro (plays on load, not scroll-bound) ------------------- */
+    /* ---- Intro: the solicitation arrives (plays on load) ----------- */
     gsap.set(siteL, { scale: SITE_ZOOM, transformOrigin: '50% 50%' });
-    gsap.fromTo(openEdge, { strokeDasharray: 1, strokeDashoffset: 1 },
-      { strokeDashoffset: 0, duration: 1.6, ease: 'power3.inOut', delay: 0.15 });
-    gsap.fromTo(openGlow, { opacity: 0 }, { opacity: 1, duration: 1.2, ease: 'power2.out', delay: 0.9 });
+    var docLines = $$('.seq-doc__title, .seq-doc__meta, .seq-doc__line, .seq-doc__sign', doc);
+    var flagBox = $('.seq-doc__flag-box', doc), flagText = $('.seq-doc__flag-text', doc);
+    gsap.fromTo($('.seq-doc__sheet', doc), { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out', delay: 0.1 });
+    gsap.fromTo(docLines, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 0.7, ease: 'expo.out', stagger: 0.05, delay: 0.35 });
+    gsap.fromTo(flagBox, { strokeDasharray: 1, strokeDashoffset: 1, fillOpacity: 0 }, { strokeDashoffset: 0, fillOpacity: 1, duration: 1.1, ease: 'power3.inOut', delay: 0.9 });
+    gsap.fromTo(flagText, { opacity: 0 }, { opacity: 1, duration: 0.6, delay: 1.5 });
     gsap.from($$('.seq__kicker, .seq__sub', B.open), { y: 16, opacity: 0, duration: 0.8, ease: 'expo.out', stagger: 0.1, delay: 0.35 });
 
-    var ringOffsets = ringCells.map(function (c) {
-      var bb = c.getBBox();
-      return { x: 500 - (bb.x + bb.width / 2), y: 320 - (bb.y + bb.height / 2) };
-    });
-
     var tl = gsap.timeline({ defaults: { ease: 'none' } });
-    var inBeat = function (el, at) { tl.fromTo(el, { opacity: 0, y: 32 }, { opacity: 1, y: 0, duration: 4, ease: 'power3.out' }, at); };
-    var outBeat = function (el, at) { tl.to(el, { opacity: 0, y: -32, duration: 3, ease: 'power2.in' }, at); };
+    var inBeat = function (el, at) { tl.fromTo(el, { opacity: 0, y: 32 }, { opacity: 1, y: 0, duration: 3.5, ease: 'power3.out' }, at); };
+    var outBeat = function (el, at) { tl.to(el, { opacity: 0, y: -32, duration: 2.5, ease: 'power2.in' }, at); };
 
-    /* 0–10 OPEN */
+    /* 0-10 CONTRACT */
     outBeat(B.open, 7);
 
-    /* 10–30 MOBILIZE: the cell becomes the centre of a site grid */
-    tl.to(open, { scale: 24 / 70, svgOrigin: '500 320', duration: 6, ease: 'power3.inOut' }, 9);
-    tl.to(openEdge, { stroke: '#8A8C94', duration: 4 }, 10);
-    tl.to(openGlow, { opacity: 0, duration: 3 }, 9);
-    tl.set(grid, { opacity: 1 }, 10);
+    /* 10-28 MOBILIZE: the paper unfolds into a site plan */
+    tl.to([docLines, flagBox, flagText], { opacity: 0, duration: 2 }, 8.5);
+    tl.to(doc, { scaleX: 0.42, scaleY: 0.3, rotation: 0, svgOrigin: '500 312', opacity: 0, duration: 4, ease: 'power3.inOut' }, 9);
+    tl.set(grid, { opacity: 1 }, 10.5);
     tl.fromTo(cells, { scale: 0.6, opacity: 0, transformOrigin: '50% 50%' }, {
       scale: 1, opacity: 1, duration: 3, ease: 'power3.out',
-      stagger: function (i, el) { return (+el.getAttribute('data-ring') - 1) * 2 + (i % 5) * 0.1; }
+      stagger: function (i, el) { return (+el.getAttribute('data-ring') - 1) * 1.8 + (i % 5) * 0.1; }
     }, 11);
     inBeat(B.mobilize, 12);
-    tl.set(markers, { opacity: 1 }, 20);
-    tl.fromTo(markerEls, { y: -60, opacity: 0 }, { y: 0, opacity: 1, duration: 2.2, stagger: 0.9, ease: 'back.out(2.2)' }, 20);
+    tl.set(markers, { opacity: 1 }, 18);
+    tl.fromTo(markerEls, { y: -60, opacity: 0 }, { y: 0, opacity: 1, duration: 2, stagger: 0.8, ease: 'back.out(2.2)' }, 18);
 
-    /* 30–60 EXECUTE: ground tilts, facade extrudes row by row */
-    outBeat(B.mobilize, 28);
-    tl.to(markers, { opacity: 0, duration: 3 }, 29);
-    tl.to(open, { opacity: 0, duration: 3 }, 29);
-    tl.to(grid, { y: 180, scaleY: 0.3, svgOrigin: '500 320', duration: 6, ease: 'power3.inOut' }, 30);
-    inBeat(B.execute, 32);
-    tl.set(building, { opacity: 1 }, 34);
-    tl.set(callout, { opacity: 1, y: rowsY[0] }, 34);
+    /* 28-58 EXECUTE: the plan becomes a building */
+    outBeat(B.mobilize, 26);
+    tl.to(markers, { opacity: 0, duration: 2.5 }, 27);
+    tl.to(grid, { y: 180, scaleY: 0.3, svgOrigin: '500 320', duration: 6, ease: 'power3.inOut' }, 28);
+    inBeat(B.execute, 30);
+    tl.set(building, { opacity: 1 }, 32);
+    tl.set(callout, { opacity: 1, y: rowsY[0] }, 32);
     rows.forEach(function (row, r) {
-      var at = 35 + r * 5;
+      var at = 33 + r * 5;
       tl.fromTo(row, { scaleY: 0, transformOrigin: '50% 100%' }, { scaleY: 1, duration: 2.6, ease: 'power3.out' }, at);
       tl.fromTo($$('polygon', row), { fillOpacity: 0 }, { fillOpacity: 1, duration: 1.6, stagger: 0.08 }, at + 1.2);
       if (r > 0) tl.to(callout, { y: rowsY[r], duration: 1.2, ease: 'power2.inOut' }, at + 1.4);
     });
 
-    /* 60–75 CLOSE OUT: one orange trace around the finished building */
-    outBeat(B.execute, 59);
-    tl.to(callout, { opacity: 0, duration: 2 }, 60);
-    tl.set(outline, { opacity: 1 }, 61);
-    tl.fromTo(outline, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 7, ease: 'power1.inOut' }, 61);
-    inBeat(B.closeout, 62);
-    tl.to(outline, { stroke: '#8A8C94', duration: 2.5 }, 69.5);
+    /* 58-72 CLOSE OUT: one orange trace, then the stamp */
+    outBeat(B.execute, 57);
+    tl.to(callout, { opacity: 0, duration: 2 }, 58);
+    tl.set(outline, { opacity: 1 }, 59);
+    tl.fromTo(outline, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 6, ease: 'power1.inOut' }, 59);
+    inBeat(B.closeout, 60);
+    tl.to(outline, { stroke: '#8A8C94', duration: 2 }, 65.5);
+    tl.fromTo(stamp, { opacity: 0, scale: 1.5, svgOrigin: '500 392' }, { opacity: 1, scale: 1, duration: 1.4, ease: 'back.out(1.8)' }, 66);
 
-    /* 75–92 FOOTPRINT: the camera pulls back; the site shrinks onto NC */
-    outBeat(B.closeout, 73.5);
+    /* 72-86 FOOTPRINT: pull back; the site shrinks onto North Carolina */
+    outBeat(B.closeout, 70.5);
     tl.to(siteL, {
       scale: END_SCALE,
       x: function () { return siteShift('x'); },
       y: function () { return siteShift('y'); },
       duration: 6.5, ease: 'power3.inOut'
-    }, 75);
-    tl.to(siteL, { opacity: 0, duration: 1.5 }, 80);
+    }, 72);
+    tl.to(siteL, { opacity: 0, duration: 1.5 }, 77);
     tl.fromTo(mapL, { opacity: 0.001, scale: 1.6, transformOrigin: ncOrigin },
-      { opacity: 1, scale: 1, duration: 6.5, ease: 'power3.inOut' }, 75);
-    tl.fromTo(netL, { opacity: 0.001 }, { opacity: 1, duration: 0.5 }, 79);
-    inBeat(B.footprint, 77);
+      { opacity: 1, scale: 1, duration: 6.5, ease: 'power3.inOut' }, 72);
+    tl.fromTo(netL, { opacity: 0.001 }, { opacity: 1, duration: 0.5 }, 76);
+    inBeat(B.footprint, 74);
     ['nc', 'tx', 'fl'].forEach(function (id, i) {
       var h = hub(id);
       if (!h) return;
-      var at = 80 + i * 2;
+      var at = 77 + i * 2;
       tl.fromTo($('.seq-hub__dot', h), { scale: 0.4, opacity: 0, transformOrigin: '50% 50%' }, { scale: 1, opacity: 1, duration: 1.2, ease: 'back.out(3)' }, at);
-      tl.fromTo($('.seq-hub__pulse', h), { attr: { r: 8 }, opacity: 0.95 }, { attr: { r: 46 }, opacity: 0, duration: 2.6, ease: 'power2.out' }, at);
+      tl.fromTo($('.seq-hub__pulse', h), { attr: { r: 8 }, opacity: 0.95 }, { attr: { r: 46 }, opacity: 0, duration: 2.4, ease: 'power2.out' }, at);
     });
-    tl.fromTo(netLines, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.6, stagger: 0.2, ease: 'power1.inOut' }, 85);
-    tl.fromTo(netNodes, { scale: 0.4, opacity: 0, transformOrigin: '50% 50%' }, { scale: 1, opacity: 1, duration: 1, stagger: 0.2 }, 86);
-    tl.fromTo($$('[data-loc]', B.footprint), { opacity: 0.3 }, { opacity: 1, duration: 1.2, stagger: 2 }, 79.5);
-    tl.fromTo($$('.seq__sectors li', B.footprint), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 1.4, stagger: 1.1, ease: 'power3.out' }, 85.5);
+    tl.fromTo(netLines, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.4, stagger: 0.18, ease: 'power1.inOut' }, 81.5);
+    tl.fromTo(netNodes, { scale: 0.4, opacity: 0, transformOrigin: '50% 50%' }, { scale: 1, opacity: 1, duration: 1, stagger: 0.18 }, 82);
+    tl.fromTo($$('[data-loc]', B.footprint), { opacity: 0.3 }, { opacity: 1, duration: 1.1, stagger: 2 }, 76.5);
+    tl.fromTo($$('.seq__sectors li', B.footprint), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 1.2, stagger: 0.9, ease: 'power3.out' }, 82);
 
-    /* 92–100 RESOLVE: hex cells collapse into the real logo */
-    outBeat(B.footprint, 91);
-    tl.to(mapL, { opacity: 0.001, duration: 3 }, 91.5);
-    tl.to(net, { opacity: 0, duration: 2.5 }, 91.5);
-    tl.set(ring, { opacity: 1 }, 92);
-    tl.fromTo(ringCells, { scale: 0.5, opacity: 0, transformOrigin: '50% 50%' }, { scale: 1, opacity: 1, duration: 1.4, stagger: 0.07, ease: 'back.out(1.8)' }, 92);
-    tl.to(ringCells, {
-      x: function (i) { return ringOffsets[i].x; },
-      y: function (i) { return ringOffsets[i].y; },
-      scale: 0.15, opacity: 0, duration: 2.8, stagger: 0.04, ease: 'power3.in'
-    }, 94);
-    tl.to(B.resolve, { opacity: 1, duration: 2.4 }, 95.5);
-    if (logo) tl.fromTo(logo, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 2.6, ease: 'expo.out' }, 96);
-    tl.fromTo(resolveText, { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 1.8, stagger: 0.5, ease: 'power3.out' }, 97.2);
-    tl.to({}, { duration: 1 }, 99.9);
+    /* 86-96 PROOF: seven verifiable facts lock into a honeycomb */
+    outBeat(B.footprint, 85.5);
+    tl.to(mapL, { opacity: 0.001, duration: 2.5 }, 86);
+    tl.to(net, { opacity: 0, duration: 2 }, 86);
+    tl.set(proof, { opacity: 1 }, 86.5);
+    inBeat(B.proof, 87);
+    pcells.forEach(function (cell, i) {
+      var at = 87.5 + i * 1.1;
+      var dx = proofXY[i][0] - 500, dy = proofXY[i][1] - 320;
+      tl.fromTo(cell, { scale: 0.7, opacity: 0, transformOrigin: '50% 50%' }, { scale: 1, opacity: 1, duration: 0.8, ease: 'back.out(2)' }, at);
+      tl.to(plock, { x: dx, y: dy, opacity: 1, duration: i ? 0.5 : 0.01, ease: 'power2.inOut' }, at);
+      tl.to($('.seq-pcell__hex', cell), { fill: '#2E2E33', stroke: '#8A8C94', duration: 0.5 }, at + 0.5);
+      tl.to($('.seq-pcell__icon', cell), { fill: '#F3F4F6', duration: 0.5 }, at + 0.5);
+    });
+    tl.to(plock, { opacity: 0, duration: 0.8 }, 95.4);
+
+    /* 96-100 RESOLVE: the honeycomb collapses into the real logo */
+    outBeat(B.proof, 95);
+    tl.to(pcells, {
+      x: function (i) { return 500 - proofXY[i][0]; },
+      y: function (i) { return 320 - proofXY[i][1]; },
+      scale: 0.2, opacity: 0, duration: 2, stagger: 0.03, ease: 'power3.in'
+    }, 95.5);
+    tl.to(B.resolve, { opacity: 1, duration: 2 }, 96.5);
+    if (logo) tl.fromTo(logo, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 2, ease: 'expo.out' }, 97);
+    tl.fromTo(resolveText, { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 1.4, stagger: 0.4, ease: 'power3.out' }, 98);
+    tl.to({}, { duration: 0.6 }, 99.9);
 
     /* ---- UI state that follows the playhead ------------------------ */
-    var bounds = [10, 30, 60, 75, 92, 101];
-    var lastBeat = -1, lastCap = -2;
+    var bounds = [10, 28, 58, 72, 86, 96, 101];
+    var lastBeat = -1, lastCap = -2, lastProof = -2;
+    function mark(list, idx) {
+      list.forEach(function (li, i) {
+        li.setAttribute('data-on', i === idx ? 'true' : 'false');
+        li.setAttribute('data-done', i < idx ? 'true' : 'false');
+      });
+    }
     function sync(p) {
       var P = p * 100;
       var b = 0;
@@ -618,14 +631,10 @@
         seq.setAttribute('data-light', b === order.length - 1 ? 'true' : 'false');
         lastBeat = b;
       }
-      var ci = P < 35 ? -1 : P >= 60 ? caps.length : clamp(Math.floor((P - 35) / 5), 0, caps.length - 1);
-      if (ci !== lastCap) {
-        caps.forEach(function (li, i) {
-          li.setAttribute('data-on', i === ci ? 'true' : 'false');
-          li.setAttribute('data-done', i < ci ? 'true' : 'false');
-        });
-        lastCap = ci;
-      }
+      var ci = P < 33 ? -1 : P >= 58 ? caps.length : clamp(Math.floor((P - 33) / 5), 0, caps.length - 1);
+      if (ci !== lastCap) { mark(caps, ci); lastCap = ci; }
+      var pi = P < 87.5 ? -1 : P >= 95.4 ? proofs.length : clamp(Math.floor((P - 87.5) / 1.1), 0, proofs.length - 1);
+      if (pi !== lastProof) { mark(proofs, pi); lastProof = pi; }
     }
     sync(0);
 
@@ -633,7 +642,7 @@
       trigger: seq,
       pin: pin,
       start: 'top top',
-      end: function () { return '+=' + Math.round(window.innerHeight * (mobile.matches ? 3.2 : 4.4)); },
+      end: function () { return '+=' + Math.round(window.innerHeight * (mobile.matches ? 3.8 : 5.2)); },
       scrub: 0.35,
       animation: tl,
       anticipatePin: 1,
@@ -643,7 +652,7 @@
 
     /* Keyboard users tabbing to a control inside a not-yet-visible beat
        are scrolled to where that beat is on screen. */
-    var atFor = { open: 0, mobilize: 0.2, execute: 0.45, closeout: 0.68, footprint: 0.86, resolve: 0.995 };
+    var atFor = { open: 0, mobilize: 0.2, execute: 0.45, closeout: 0.67, footprint: 0.8, proof: 0.93, resolve: 0.995 };
     seq.addEventListener('focusin', function (e) {
       var el = e.target.closest('[data-beat]');
       if (!el) return;
@@ -892,7 +901,7 @@
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);
   else boot();
 
-  /* If the user flips the reduced-motion switch, reload the behaviour
+  /* If the user flips the reduced-motion switch, reload the behavior
      contract rather than leaving a half-animated page behind. */
   reduceMotion.addEventListener('change', function () { window.location.reload(); });
 })();

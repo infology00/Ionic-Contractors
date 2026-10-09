@@ -379,7 +379,7 @@ ${site.searchConsoleToken ? `<meta name="google-site-verification" content="${es
 ${preload}
 
 <script>
-/* Set the behaviour contract before first paint so there is no flash
+/* Set the behavior contract before first paint so there is no flash
    of the enhanced layout for users who get the static one. */
 (function(d){
   var r = d.documentElement;

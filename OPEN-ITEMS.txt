@@ -1,5 +1,5 @@
 ===============================================================================
-OPEN ITEMS — IONIC CONTRACTORS WEBSITE  (V3, handoff round 2 + design pass)
+OPEN ITEMS — IONIC CONTRACTORS WEBSITE  (V5)
 ===============================================================================
 
 Part A ticks off the round-2 handoff. Part B is what we still need from you.
@@ -107,6 +107,27 @@ V3 DESIGN / PERFORMANCE PASS
     content-visibility mis-measurement, logo pre-decoded
 [x] Markets as full-width rows; eyebrows removed above section heads;
     capability matrix stacks on phones; zero em-dashes (build-enforced)
+
+V4 SCROLL STORY
+[x] Landing sequence rebuilt around "From contract to keys": solicitation
+    > site plan > building > TURNED OVER > nationwide > verifiable proof
+    > logo. Still covers every beat the handoff asked for (Mobilize /
+    Execute / Close Out, hex build, footprint map, resolve to the logo).
+[ ] Handoff example headline was "Veteran-owned. Built for public and
+    private work." V4 uses "From contract to keys." with the multi-sector
+    line in the subtext. Confirm the client is happy with the new h1.
+
+V5 US ENGLISH
+[x] Whole project checked for British spelling and vocabulary: visible
+    copy, page titles, meta and alt text, form messages, code comments
+    and docs. Fixed: "fit-out" (now "tenant improvements"), and
+    colour / behaviour / centre / rasterised in code comments.
+[x] Build now fails on 60+ British spellings and terms (colour, centre,
+    licence, organise, programme, enquiry, whilst, fit-out, tender...),
+    in the pages and in js/app.js.
+    Kept on purpose: aria-labelledby (HTML attribute name) and
+    PostalAddress / postalCode (schema.org field names) are fixed
+    technical names, not English copy.
 
 -------------------------------------------------------------------------------
 B. STILL NEEDED FROM YOU
