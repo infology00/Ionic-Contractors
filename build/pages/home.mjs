@@ -17,7 +17,7 @@ ${trustBar()}
   </div>
 </section>
 
-<section class="section section--flush-top" aria-labelledby="capability-snapshot">
+<section class="section theme-gray" aria-labelledby="capability-snapshot">
   <div class="wrap">
     ${sectionHead({
       eyebrow: 'Capabilities',
@@ -34,7 +34,7 @@ ${trustBar()}
 
 ${marquee()}
 
-<section class="section theme-gray" aria-labelledby="markets-title">
+<section class="section" aria-labelledby="markets-title">
   <div class="wrap">
     ${sectionHead({
       eyebrow: 'Markets',
@@ -46,7 +46,23 @@ ${marquee()}
   </div>
 </section>
 
-<section class="section" aria-labelledby="delivery-title">
+<section class="stats-band theme-dark" aria-labelledby="at-a-glance">
+  <div class="wrap">
+    ${sectionHead({
+      title: 'Registered, certified, and ready to award.',
+      lead: 'The identifiers a contracting officer needs are current and on file, and inquiries are answered the same business day.',
+      id: 'at-a-glance',
+    })}
+    <div class="grid grid--4">
+      ${statTile({ value: String(capabilities.length), count: capabilities.length, label: 'Capability lines', note: 'Led by general construction' })}
+      ${statTile({ value: String(naicsList.length), count: naicsList.length, label: 'NAICS codes', note: 'Primary: 236220' })}
+      ${statTile({ value: String(locations.length), count: locations.length, label: 'Offices', note: 'NC headquarters, TX and FL field offices' })}
+      ${statTile({ value: '1 day', label: 'Typical response', note: 'Agency and teaming inquiries' })}
+    </div>
+  </div>
+</section>
+
+<section class="section theme-gray" aria-labelledby="delivery-title">
   <div class="wrap">
     ${sectionHead({
       eyebrow: 'Delivery approach',
@@ -58,7 +74,7 @@ ${marquee()}
   </div>
 </section>
 
-<section class="section section--flush-top" aria-labelledby="dual-path">
+<section class="section" aria-labelledby="dual-path">
   <div class="wrap">
     ${sectionHead({
       eyebrow: 'Work with Ionic',
@@ -96,17 +112,7 @@ ${marquee()}
   </div>
 </section>
 
-<section class="section section--tight" aria-labelledby="at-a-glance">
-  <div class="wrap">
-    <h2 id="at-a-glance" class="sr-only">Ionic Contractors at a glance</h2>
-    <div class="grid grid--4">
-      ${statTile({ value: String(capabilities.length), count: capabilities.length, label: 'Capability lines', note: 'Led by general construction' })}
-      ${statTile({ value: String(naicsList.length), count: naicsList.length, label: 'NAICS codes', note: 'Primary: 236220' })}
-      ${statTile({ value: String(locations.length), count: locations.length, label: 'Offices', note: 'NC headquarters, TX and FL field offices' })}
-      ${statTile({ value: 'Same day', label: 'Typical response', note: 'Agency and teaming inquiries' })}
-    </div>
-  </div>
-</section>
+
 
 ${projectsSection()}
 

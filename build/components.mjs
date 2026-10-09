@@ -8,6 +8,7 @@ import {
   differentiators, bonding, principals, leadershipReady, projects, locations,
 } from './site.mjs';
 import { PHOSPHOR } from './icons.mjs';
+import { blueprintArt } from './drawing.mjs';
 
 export const esc = (s = '') =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -47,16 +48,9 @@ const icon = (name) => (s = 20) =>
 
 export const icons = Object.fromEntries(Object.keys(PHOSPHOR).map((k) => [k, icon(k)]));
 
-/* Decorative hex outline — echoes the logo shape. Never stands in for
-   the logo itself, which is always the supplied file. */
-export const hexOutline = (cls = '') =>
-  `<svg class="${cls}" viewBox="0 0 100 115" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true" focusable="false"><path d="M50 2 98 30v55L50 113 2 85V30Z"/></svg>`;
-
-/* Hex lattice for inner-page heroes (one small inline pattern) */
-export const lattice = () => `<div class="page-hero__lattice" aria-hidden="true"><svg focusable="false">
-  <defs><pattern id="hexlat" width="56" height="97" patternUnits="userSpaceOnUse" patternTransform="scale(1.2)">
-    <path d="M28 0 56 16v32L28 64 0 48V16Zm0 64v33" fill="none" stroke="currentColor" stroke-width="1"/>
-  </pattern></defs><rect width="100%" height="100%" fill="url(#hexlat)"/></svg></div>`;
+/* Blueprint drawing: the site-wide motif, shared with the home
+   sequence. Inner-page heroes get it on a faint drafting grid. */
+export const lattice = () => `<div class="page-hero__lattice" aria-hidden="true">${blueprintArt('page-hero__art')}</div>`;
 
 /* ==================================================================
    LOGO — always the supplied files, never redrawn or recoloured.
@@ -330,7 +324,7 @@ export function ctaBand({
   lead = '',
 } = {}) {
   return `<section class="cta-band theme-dark" aria-labelledby="cta-band-title">
-    ${hexOutline('cta-band__hex')}
+    ${blueprintArt('cta-band__art')}
     <div class="wrap cta-band__inner">
       <div>
         <h2 id="cta-band-title" class="display t-3xl" data-split>${title}</h2>

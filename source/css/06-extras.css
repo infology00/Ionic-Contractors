@@ -34,7 +34,7 @@
   font-family: var(--font-mono);
   font-size: var(--t-sm);
   font-weight: 600;
-  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  border-radius: var(--r-sm);
 }
 .step__num::before { content: counter(step, decimal-leading-zero); }
 
@@ -92,10 +92,9 @@
 
 .marquee__item::after {
   content: '';
-  inline-size: 0.5em;
-  block-size: 0.56em;
-  background: var(--c-text);
-  clip-path: polygon(50% 0, 100% 25%, 100% 75%, 50% 100%, 0 75%, 0 25%);
+  inline-size: 0.6em;
+  block-size: 2px;
+  background: var(--c-text-3);
   flex: none;
 }
 

@@ -1,5 +1,5 @@
 ===============================================================================
-OPEN ITEMS — IONIC CONTRACTORS WEBSITE  (V5)
+OPEN ITEMS — IONIC CONTRACTORS WEBSITE  (V7)
 ===============================================================================
 
 Part A ticks off the round-2 handoff. Part B is what we still need from you.
@@ -128,6 +128,20 @@ V5 US ENGLISH
     Kept on purpose: aria-labelledby (HTML attribute name) and
     PostalAddress / postalCode (schema.org field names) are fixed
     technical names, not English copy.
+
+V7 PREMIUM PASS + BLUEPRINT STORY
+[x] Hexagon artwork replaced by an architect's drawing: site plan,
+    isometric building rising floor by floor, dusk with lit windows,
+    dot-matrix US map, title-block proof. Logo hexagon untouched.
+[x] Same blueprint linework now used across the site (inner-page
+    heroes, closing band); remaining decorative hexagons removed.
+[x] Premium pass: surfaces instead of outlined boxes, larger section
+    titles, drafting-line rule above section titles, dark stats band
+    with large numerals, film grain on dark sections, calmer header,
+    grids locked so no card sits alone on a row.
+[ ] Note for the client: the handoff asked for hex cells as the
+    animation's structural unit. V7 replaces them with a blueprint
+    drawing at the site owner's request; confirm with the client.
 
 -------------------------------------------------------------------------------
 B. STILL NEEDED FROM YOU

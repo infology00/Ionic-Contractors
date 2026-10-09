@@ -172,8 +172,12 @@ h1, h2, h3, h4, h5, h6 {
 
 .grid { display: grid; gap: var(--gap); }
 .grid--2 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 20rem), 1fr)); }
-.grid--3 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); }
-.grid--4 { grid-template-columns: repeat(auto-fit, minmax(min(100%, 13rem), 1fr)); }
+/* Fixed column counts (never auto-fit) so a row never ends with one card alone */
+.grid--3 { grid-template-columns: 1fr; }
+@media (min-width: 52rem) { .grid--3 { grid-template-columns: repeat(3, 1fr); } }
+.grid--4 { grid-template-columns: 1fr; }
+@media (min-width: 36rem) { .grid--4 { grid-template-columns: repeat(2, 1fr); } }
+@media (min-width: 64rem) { .grid--4 { grid-template-columns: repeat(4, 1fr); } }
 
 /* Capability bento: feature card + 4 lines lands as 2 full rows */
 .grid--caps { grid-template-columns: 1fr; }
@@ -208,3 +212,7 @@ h1, h2, h3, h4, h5, h6 {
   transition: transform var(--dur) var(--ease-out);
 }
 .skip-link:focus-visible { transform: translateY(0); }
+
+/* Even pairs: 2 columns from tablet up, so 4 items never leave an orphan */
+.grid--pairs { grid-template-columns: 1fr; }
+@media (min-width: 40rem) { .grid--pairs { grid-template-columns: repeat(2, 1fr); } }

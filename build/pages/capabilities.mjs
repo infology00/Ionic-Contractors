@@ -68,7 +68,7 @@ ${pageHero({
       id: 'supporting',
     })}
 
-    <div class="grid grid--2">
+    <div class="grid grid--pairs">
       ${supporting.map((c, i) => `<article class="card reveal" id="${esc(c.id)}" style="--reveal-delay:${i * 70}ms">
         <span class="card__icon">${icons[c.icon] ? icons[c.icon]() : icons.building()}</span>
         <h3 class="card__title">${esc(c.name)}</h3>

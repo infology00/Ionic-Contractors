@@ -444,10 +444,10 @@
 
      Performance model: the artwork is three stacked SVG layers that
      share one 1000 x 640 coordinate system.
-       site  document, grid, building, stamp  (small; repaints early)
+       site  document, site plan, building    (small; repaints early)
        map   the ~1,000-cell US silhouette    (rasterized once, then
                                                only moved/faded)
-       net   hubs, partner lines, proof cells (small; repaints late)
+       net   hubs, partner lines, title block (small; repaints late)
      Every camera move is a CSS transform on a whole layer, which the
      GPU composites without repainting anything.
   ================================================================ */
@@ -460,24 +460,27 @@
     var siteL = layer('site'), mapL = layer('map'), netL = layer('net');
     var netSvg = $('[data-seq-svg]', seq);
     var g = function (name) { return $('[data-g="' + name + '"]', seq); };
-    var nc = netSvg.getAttribute('data-nc').split(' ').map(Number);
-    var rowsY = netSvg.getAttribute('data-rows').split(',').map(Number);
-    var proofXY = netSvg.getAttribute('data-proof').split(',').map(function (p) { return p.split(' ').map(Number); });
+    var nums = function (attr) { return netSvg.getAttribute(attr).split(/[ ,]/).map(Number); };
+    var nc = nums('data-nc');
+    var floorY = nums('data-rows');
+    var tbRows = nums('data-tb-rows');
+    var tbC = nums('data-tb-center');
 
-    var doc = g('doc'), grid = g('grid'), markers = g('markers'), building = g('building');
-    var outline = g('outline'), callout = g('callout'), stamp = g('stamp'), net = g('net'), proof = g('proof'), plock = g('plock');
-    var cells = $$('polygon', grid);
+    var doc = g('doc'), plan = g('plan'), grid = g('grid'), foot = g('foot'), annot = g('annot');
+    var markers = g('markers'), building = g('building'), roof = g('roof'), outline = g('outline');
+    var callout = g('callout'), dusk = g('dusk'), net = g('net'), proof = g('proof'), plock = g('plock');
+    var gridLines = $$('line', grid);
     var markerEls = $$('[data-marker]', markers);
-    var rows = $$('[data-row]', building);
-    var pcells = $$('[data-pcell]', proof);
+    var floors = $$('[data-floor]', building);
+    var litWins = $$('.seq-win[data-lit="1"]', building);
+    var tbRowsEls = $$('[data-prow]', proof);
     var netLines = $$('.seq-net__line', net);
     var netNodes = $$('.seq-net__node', net);
     var hub = function (id) { return $('[data-hub="' + id + '"]', net); };
 
-    var beat = function (name) { return $('[data-beat="' + name + '"]', seq); };
     var order = ['open', 'mobilize', 'execute', 'closeout', 'footprint', 'proof', 'resolve'];
     var B = {};
-    order.forEach(function (n) { B[n] = beat(n); });
+    order.forEach(function (n) { B[n] = $('[data-beat="' + n + '"]', seq); });
     var caps = $$('[data-cap]', seq);
     var proofs = $$('[data-proof]', B.proof);
     var rail = $$('[data-rail]', seq);
@@ -496,12 +499,12 @@
       if (!m) return { x: 0, y: 0 };
       return { x: m.a * x + m.c * y + m.e - r.left, y: m.b * x + m.d * y + m.f - r.top };
     }
-    var SITE_ZOOM = 1.45;
+    var SITE_ZOOM = 1.3;
     var END_SCALE = 0.04;
     function siteShift(axis) {
       var r = netL.getBoundingClientRect();
       var c = { x: r.width / 2, y: r.height / 2 };
-      var b = toLayer(500, 400);
+      var b = toLayer(500, 330);
       var n = toLayer(nc[0], nc[1]);
       return n[axis] - c[axis] - END_SCALE * (b[axis] - c[axis]);
     }
@@ -510,11 +513,11 @@
     /* ---- Intro: the solicitation arrives (plays on load) ----------- */
     gsap.set(siteL, { scale: SITE_ZOOM, transformOrigin: '50% 50%' });
     var docLines = $$('.seq-doc__title, .seq-doc__meta, .seq-doc__line, .seq-doc__sign', doc);
-    var flagBox = $('.seq-doc__flag-box', doc), flagText = $('.seq-doc__flag-text', doc);
+    var flagBox = $('.seq-doc__flag-box', doc), flagLines = $$('.seq-doc__flag-line', doc);
     gsap.fromTo($('.seq-doc__sheet', doc), { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out', delay: 0.1 });
     gsap.fromTo(docLines, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 0.7, ease: 'expo.out', stagger: 0.05, delay: 0.35 });
     gsap.fromTo(flagBox, { strokeDasharray: 1, strokeDashoffset: 1, fillOpacity: 0 }, { strokeDashoffset: 0, fillOpacity: 1, duration: 1.1, ease: 'power3.inOut', delay: 0.9 });
-    gsap.fromTo(flagText, { opacity: 0 }, { opacity: 1, duration: 0.6, delay: 1.5 });
+    gsap.fromTo(flagLines, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 0.6, ease: 'expo.out', stagger: 0.08, delay: 1.5 });
     gsap.from($$('.seq__kicker, .seq__sub', B.open), { y: 16, opacity: 0, duration: 0.8, ease: 'expo.out', stagger: 0.1, delay: 0.35 });
 
     var tl = gsap.timeline({ defaults: { ease: 'none' } });
@@ -524,40 +527,47 @@
     /* 0-10 CONTRACT */
     outBeat(B.open, 7);
 
-    /* 10-28 MOBILIZE: the paper unfolds into a site plan */
-    tl.to([docLines, flagBox, flagText], { opacity: 0, duration: 2 }, 8.5);
-    tl.to(doc, { scaleX: 0.42, scaleY: 0.3, rotation: 0, svgOrigin: '500 312', opacity: 0, duration: 4, ease: 'power3.inOut' }, 9);
-    tl.set(grid, { opacity: 1 }, 10.5);
-    tl.fromTo(cells, { scale: 0.6, opacity: 0, transformOrigin: '50% 50%' }, {
-      scale: 1, opacity: 1, duration: 3, ease: 'power3.out',
-      stagger: function (i, el) { return (+el.getAttribute('data-ring') - 1) * 1.8 + (i % 5) * 0.1; }
-    }, 11);
+    /* 10-28 MOBILIZE: the paper opens into a technical site plan */
+    tl.to([docLines, flagBox, flagLines], { opacity: 0, duration: 1.6 }, 8.5);
+    tl.to(doc, { scale: 1.12, opacity: 0, svgOrigin: '500 300', duration: 3, ease: 'power2.inOut' }, 9);
+    tl.set(plan, { opacity: 1 }, 10);
+    tl.fromTo(gridLines, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.6, stagger: 0.05, ease: 'power2.inOut' }, 10.2);
+    tl.fromTo(foot, { strokeDashoffset: 1, fillOpacity: 0 }, { strokeDashoffset: 0, fillOpacity: 1, duration: 2.6, ease: 'power2.inOut' }, 13);
+    tl.fromTo(annot, { opacity: 0 }, { opacity: 1, duration: 2 }, 14.5);
     inBeat(B.mobilize, 12);
     tl.set(markers, { opacity: 1 }, 18);
-    tl.fromTo(markerEls, { y: -60, opacity: 0 }, { y: 0, opacity: 1, duration: 2, stagger: 0.8, ease: 'back.out(2.2)' }, 18);
+    tl.fromTo(markerEls, { y: -50, opacity: 0 }, { y: 0, opacity: 1, duration: 2, stagger: 0.8, ease: 'back.out(2.2)' }, 18);
 
-    /* 28-58 EXECUTE: the plan becomes a building */
+    /* 28-58 EXECUTE: the building rises floor by floor */
     outBeat(B.mobilize, 26);
     tl.to(markers, { opacity: 0, duration: 2.5 }, 27);
-    tl.to(grid, { y: 180, scaleY: 0.3, svgOrigin: '500 320', duration: 6, ease: 'power3.inOut' }, 28);
-    inBeat(B.execute, 30);
-    tl.set(building, { opacity: 1 }, 32);
-    tl.set(callout, { opacity: 1, y: rowsY[0] }, 32);
-    rows.forEach(function (row, r) {
-      var at = 33 + r * 5;
-      tl.fromTo(row, { scaleY: 0, transformOrigin: '50% 100%' }, { scaleY: 1, duration: 2.6, ease: 'power3.out' }, at);
-      tl.fromTo($$('polygon', row), { fillOpacity: 0 }, { fillOpacity: 1, duration: 1.6, stagger: 0.08 }, at + 1.2);
-      if (r > 0) tl.to(callout, { y: rowsY[r], duration: 1.2, ease: 'power2.inOut' }, at + 1.4);
+    tl.to(annot, { opacity: 0, duration: 2 }, 27);
+    tl.to(plan, { opacity: 0.45, duration: 3 }, 28);
+    inBeat(B.execute, 29.5);
+    tl.set(building, { opacity: 1 }, 30.5);
+    tl.set(callout, { opacity: 1, y: floorY[0] }, 31);
+    floors.forEach(function (fl, i) {
+      var at = 31 + i * 5;
+      var faces = $$('.seq-face', fl), wins = $$('.seq-win', fl), rest = $$('.seq-slab, .seq-canopy', fl);
+      tl.fromTo(fl, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 1.4, ease: 'power3.out' }, at);
+      tl.fromTo(faces, { strokeDashoffset: 1, fillOpacity: 0 }, { strokeDashoffset: 0, duration: 1.6, ease: 'power2.inOut' }, at);
+      tl.to(faces, { fillOpacity: 1, duration: 1.2 }, at + 1.3);
+      tl.fromTo(wins, { opacity: 0 }, { opacity: 1, duration: 0.5, stagger: 0.04 }, at + 1.8);
+      tl.fromTo(rest, { opacity: 0 }, { opacity: 1, duration: 0.8 }, at + 1.2);
+      if (i > 0) tl.to(callout, { y: floorY[i], duration: 1.2, ease: 'power2.inOut' }, at + 0.4);
     });
+    if (roof) tl.fromTo(roof, { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 1.6, ease: 'power3.out' }, 55.5);
 
-    /* 58-72 CLOSE OUT: one orange trace, then the stamp */
+    /* 58-72 CLOSE OUT: one orange trace, then dusk; the lights come on */
     outBeat(B.execute, 57);
     tl.to(callout, { opacity: 0, duration: 2 }, 58);
     tl.set(outline, { opacity: 1 }, 59);
-    tl.fromTo(outline, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 6, ease: 'power1.inOut' }, 59);
+    tl.fromTo(outline, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 5, ease: 'power1.inOut' }, 59);
     inBeat(B.closeout, 60);
-    tl.to(outline, { stroke: '#8A8C94', duration: 2 }, 65.5);
-    tl.fromTo(stamp, { opacity: 0, scale: 1.5, svgOrigin: '500 392' }, { opacity: 1, scale: 1, duration: 1.4, ease: 'back.out(1.8)' }, 66);
+    tl.to(outline, { opacity: 0, duration: 2 }, 64.5);
+    tl.to(plan, { opacity: 0.22, duration: 3 }, 64);
+    tl.fromTo(dusk, { opacity: 0 }, { opacity: 1, duration: 3.5 }, 64.5);
+    tl.to(litWins, { fill: '#F4DDB2', stroke: '#F4DDB2', duration: 0.5, stagger: { each: 0.07, from: 'random' } }, 65.5);
 
     /* 72-86 FOOTPRINT: pull back; the site shrinks onto North Carolina */
     outBeat(B.closeout, 70.5);
@@ -584,29 +594,26 @@
     tl.fromTo($$('[data-loc]', B.footprint), { opacity: 0.3 }, { opacity: 1, duration: 1.1, stagger: 2 }, 76.5);
     tl.fromTo($$('.seq__sectors li', B.footprint), { opacity: 0, y: 10 }, { opacity: 1, y: 0, duration: 1.2, stagger: 0.9, ease: 'power3.out' }, 82);
 
-    /* 86-96 PROOF: seven verifiable facts lock into a honeycomb */
+    /* 86-96 PROOF: the title block; each credential is checked off */
     outBeat(B.footprint, 85.5);
     tl.to(mapL, { opacity: 0.001, duration: 2.5 }, 86);
     tl.to(net, { opacity: 0, duration: 2 }, 86);
     tl.set(proof, { opacity: 1 }, 86.5);
+    tl.fromTo($('.seq-tb__frame', proof), { strokeDashoffset: 1, fillOpacity: 0 }, { strokeDashoffset: 0, fillOpacity: 1, duration: 1.4, ease: 'power2.inOut' }, 86.5);
+    tl.fromTo($('.seq-tb__head', proof), { opacity: 0 }, { opacity: 1, duration: 0.8 }, 87.2);
+    tl.fromTo(tbRowsEls, { opacity: 0 }, { opacity: 0.4, duration: 0.8, stagger: 0.08 }, 87.2);
     inBeat(B.proof, 87);
-    pcells.forEach(function (cell, i) {
-      var at = 87.5 + i * 1.1;
-      var dx = proofXY[i][0] - 500, dy = proofXY[i][1] - 320;
-      tl.fromTo(cell, { scale: 0.7, opacity: 0, transformOrigin: '50% 50%' }, { scale: 1, opacity: 1, duration: 0.8, ease: 'back.out(2)' }, at);
-      tl.to(plock, { x: dx, y: dy, opacity: 1, duration: i ? 0.5 : 0.01, ease: 'power2.inOut' }, at);
-      tl.to($('.seq-pcell__hex', cell), { fill: '#2E2E33', stroke: '#8A8C94', duration: 0.5 }, at + 0.5);
-      tl.to($('.seq-pcell__icon', cell), { fill: '#F3F4F6', duration: 0.5 }, at + 0.5);
+    tbRowsEls.forEach(function (row, i) {
+      var at = 88 + i * 1;
+      tl.to(plock, { y: tbRows[i] - tbRows[0], opacity: 1, duration: i ? 0.45 : 0.01, ease: 'power2.inOut' }, at);
+      tl.to(row, { opacity: 1, duration: 0.4 }, at + 0.3);
+      tl.to($('.seq-tb__check', row), { strokeDashoffset: 0, duration: 0.5, ease: 'power2.out' }, at + 0.35);
     });
-    tl.to(plock, { opacity: 0, duration: 0.8 }, 95.4);
+    tl.to(plock, { opacity: 0, duration: 0.8 }, 95.2);
 
-    /* 96-100 RESOLVE: the honeycomb collapses into the real logo */
+    /* 96-100 RESOLVE: the title block gives way to the real logo */
     outBeat(B.proof, 95);
-    tl.to(pcells, {
-      x: function (i) { return 500 - proofXY[i][0]; },
-      y: function (i) { return 320 - proofXY[i][1]; },
-      scale: 0.2, opacity: 0, duration: 2, stagger: 0.03, ease: 'power3.in'
-    }, 95.5);
+    tl.to(proof, { scale: 0.92, opacity: 0, svgOrigin: tbC[0] + ' ' + tbC[1], duration: 1.6, ease: 'power2.in' }, 95.5);
     tl.to(B.resolve, { opacity: 1, duration: 2 }, 96.5);
     if (logo) tl.fromTo(logo, { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 2, ease: 'expo.out' }, 97);
     tl.fromTo(resolveText, { y: 18, opacity: 0 }, { y: 0, opacity: 1, duration: 1.4, stagger: 0.4, ease: 'power3.out' }, 98);
@@ -631,9 +638,9 @@
         seq.setAttribute('data-light', b === order.length - 1 ? 'true' : 'false');
         lastBeat = b;
       }
-      var ci = P < 33 ? -1 : P >= 58 ? caps.length : clamp(Math.floor((P - 33) / 5), 0, caps.length - 1);
+      var ci = P < 31 ? -1 : P >= 57 ? caps.length : clamp(Math.floor((P - 31) / 5), 0, caps.length - 1);
       if (ci !== lastCap) { mark(caps, ci); lastCap = ci; }
-      var pi = P < 87.5 ? -1 : P >= 95.4 ? proofs.length : clamp(Math.floor((P - 87.5) / 1.1), 0, proofs.length - 1);
+      var pi = P < 88 ? -1 : P >= 95.2 ? proofs.length : clamp(Math.floor(P - 88), 0, proofs.length - 1);
       if (pi !== lastProof) { mark(proofs, pi); lastProof = pi; }
     }
     sync(0);

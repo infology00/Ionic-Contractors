@@ -1,5 +1,5 @@
 ===============================================================================
-IONIC CONTRACTORS - WEBSITE  (V5)
+IONIC CONTRACTORS - WEBSITE  (V7)
 Veteran-owned SDVOSB general contractor · federal, state & local, private
 ===============================================================================
 
@@ -112,18 +112,19 @@ it. The point for a buyer: hand Ionic the solicitation, get back a
 finished facility, and every claim along the way can be verified.
 Built in code (SVG + GSAP ScrollTrigger), no video.
 
-  0-10%    Contract    a solicitation; its SDVOSB set-aside line is lit
-  10-28%   Mobilize    the paper unfolds into a hex site plan; crews and
-                       equipment stage (orange markers)
-  28-58%   Execute     the plan tilts to ground and a building rises,
-                       one row per capability line, with a callout
-  58-72%   Close out   an orange trace runs once around the building,
-                       then the TURNED OVER stamp lands
-  72-86%   Footprint   pull back to the hex US map: NC, TX, FL, partner
-                       network; Federal, State, County & municipal, Private
-  86-96%   Proof       seven facts lock into a honeycomb: SDVOSB, SAM, UEI,
-                       CAGE, NAICS, zero-incident safety, three offices
-  96-100%  Resolve     the honeycomb collapses into the real logo + CTA
+  Drawn like an architect's set: fine white linework on black, one
+  orange accent per beat (build/hero.mjs, shared motif in build/drawing.mjs).
+
+  0-10%    Contract    the solicitation arrives; one key line is lit
+  10-28%   Mobilize    it opens into a site plan: drafting grid, footprint,
+                       dimensions, grid bubbles, north arrow, staging markers
+  28-58%   Execute     an isometric building rises floor by floor, one floor
+                       per capability line, wireframe first, then glass
+  58-72%   Close out   one orange trace around it; dusk falls and the
+                       windows light up warm: it is handed over and in use
+  72-86%   Footprint   pull back to a dot-matrix US map: NC, TX, FL, partners
+  86-96%   Proof       the drawing's title block; each credential checked off
+  96-100%  Resolve     the real logo + CTA
 
 Reduced motion or no JS: the same beats render as static panels, each with
 its final frame. Mobile: shorter scroll, simplified network, compact proof
