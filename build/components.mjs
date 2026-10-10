@@ -4,7 +4,7 @@
 ------------------------------------------------------------------- */
 
 import {
-  site, addressLine, capabilities, capStatement, markets, delivery,
+  site, addressLine, intents, capabilityGroups, capsIn, capabilities, capStatement, markets, delivery,
   differentiators, bonding, principals, leadershipReady, projects, locations,
 } from './site.mjs';
 import { PHOSPHOR } from './icons.mjs';
@@ -114,15 +114,30 @@ export function sectionHead({ eyebrow, title, lead, center = false, level = 2, i
 /* ==================================================================
    CARDS
 ================================================================== */
-export function capabilityCard(cap, { linkTo = '/capabilities/', index = 0 } = {}) {
+export function capabilityCard(cap, { linkTo = '/capabilities/', index = 0, level = 3, feature = true } = {}) {
   const naics = cap.naics.map((n) => `<span class="naics-chip">${n}</span>`).join('');
-  return `<article class="card card--link${cap.primary ? ' card--feature' : ''} reveal" style="--reveal-delay:${index * 70}ms">
+  return `<article class="card card--link${feature && cap.primary ? ' card--feature' : ''} reveal" style="--reveal-delay:${index * 70}ms">
     <span class="card__icon">${icons[cap.icon] ? icons[cap.icon]() : icons.building()}</span>
-    <h3 class="card__title"><a class="card__link" href="${attr(linkTo)}#${attr(cap.id)}">${esc(cap.name)}</a></h3>
+    <h${level} class="card__title"><a class="card__link" href="${attr(linkTo)}#${attr(cap.id)}">${esc(cap.name)}</a></h${level}>
     <p class="card__body">${esc(cap.blurb)}</p>
     <div class="naics-cell" aria-label="NAICS codes">${naics}</div>
     <span class="card__more">View capability ${icons.arrow(13)}</span>
   </article>`;
+}
+
+/* The two lines of business, each with its own cards. `card` renders
+   one capability (it receives the capability and its index). */
+export function capabilityGroupsBlock(card) {
+  return `<div class="cap-groups">
+    ${capabilityGroups.map((g, gi) => `<div class="cap-group" id="${attr(g.id)}">
+      <div class="cap-group__head reveal">
+        <span class="cap-group__num">${String(gi + 1).padStart(2, '0')}</span>
+        <h3 class="cap-group__title">${esc(g.name)}</h3>
+        <p class="cap-group__blurb">${esc(g.blurb)}</p>
+      </div>
+      <div class="grid grid--3">${capsIn(g.id).map((c, i) => card(c, i)).join('')}</div>
+    </div>`).join('')}
+  </div>`;
 }
 
 export function pathCard({ label, title, body, points = [], href, cta }) {
@@ -131,7 +146,7 @@ export function pathCard({ label, title, body, points = [], href, cta }) {
     <h3 class="display t-2xl">${esc(title)}</h3>
     <p class="card__body">${esc(body)}</p>
     ${points.length ? `<ul class="check-list">${points.map((p) => `<li>${icons.check(15)}<span>${esc(p)}</span></li>`).join('')}</ul>` : ''}
-    <div style="margin-top:auto;padding-top:var(--s-5)">${btn(href, cta, { variant: 'secondary' })}</div>
+    ${href ? `<div style="margin-top:auto;padding-top:var(--s-5)">${btn(href, cta, { variant: 'secondary' })}</div>` : ''}
   </article>`;
 }
 
@@ -320,18 +335,17 @@ export function accordion(items, { idPrefix = 'acc' } = {}) {
    CTA BAND — closing call to action, identical on every page
 ================================================================== */
 export function ctaBand({
-  title = 'Let&rsquo;s talk about your project.',
-  lead = '',
+  title = 'Have a requirement? Talk to us directly.',
+  lead = 'Send the solicitation, the scope, or the question. A principal answers, usually the same business day.',
+  action = 'partner',
 } = {}) {
+  const act = action && intents[action];
   return `<section class="cta-band theme-dark" aria-labelledby="cta-band-title">
-    ${blueprintArt('cta-band__art')}
     <div class="wrap cta-band__inner">
       <div>
         <h2 id="cta-band-title" class="display t-3xl" data-split>${title}</h2>
         ${lead ? `<p class="lead reveal" style="margin-top:var(--s-4)">${lead}</p>` : ''}
-        <div class="reveal" style="margin-top:var(--s-7)">
-          ${btnRow(ctaPrimary(), ctaSecondary())}
-        </div>
+        ${act ? `<div class="reveal" style="margin-top:var(--s-7)">${btn(act.href, act.label, { variant: 'primary' })}</div>` : ''}
       </div>
       <div class="cta-band__aside reveal">
         <p class="mono" style="color:var(--c-text-3)">Direct contact</p>
@@ -510,10 +524,11 @@ export function capabilityMatrix() {
         </tr>
       </thead>
       <tbody>
-        ${capabilities.map((c) => `<tr${c.primary ? ' data-primary="true"' : ''}>
+        ${capabilityGroups.map((g) => `<tr class="table__group"><th scope="rowgroup" colspan="2">${esc(g.name)}</th></tr>
+        ${capsIn(g.id).map((c) => `<tr${c.primary ? ' data-primary="true"' : ''}>
           <th scope="row">${esc(c.name)}${c.primary ? ' <span class="badge badge--accent">Primary</span>' : ''}</th>
           <td><div class="naics-cell">${c.naics.map((n) => `<span class="naics-chip">${n}</span>`).join('')}</div></td>
-        </tr>`).join('')}
+        </tr>`).join('')}`).join('')}
       </tbody>
     </table>
   </div>`;

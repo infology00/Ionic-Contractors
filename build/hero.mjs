@@ -7,9 +7,9 @@
      Contract   0-10%   the solicitation arrives; one key line is lit
      Mobilize  10-28%   the paper opens into a technical site plan:
                         grid, footprint, dimensions, staging markers
-     Execute   28-58%   the building rises floor by floor (one floor per
-                        capability line), wireframe first, then glass
-     Close out 58-72%   one orange trace around the building; dusk
+     Execute   28-58%   each capability floats in as a charged hex and
+                        bonds into a honeycomb around the Ionic mark; the
+     Close out 58-72%   one orange trace around the honeycomb; its cells light
                         falls and the windows light up: it is in use
      Footprint 72-86%   pull back to a dot-matrix US map: NC, TX, FL,
                         partner network
@@ -22,7 +22,7 @@
    its final frame (the <symbol>s below). All geometry is generated
    here at build time; nothing is fetched at runtime.
 ================================================================== */
-import { capabilities, locations, capStatement, site } from './site.mjs';
+import { capabilities, capabilityGroups, hexLabels, locations, capStatement, site } from './site.mjs';
 import { btn, esc, logoImg } from './components.mjs';
 
 const W = 1000, H = 640;
@@ -98,146 +98,191 @@ const network = NETWORK.map(([from, lon, lat, mobile]) => {
   return { d: `M${f(x1)} ${f(y1)}Q${f(cx)} ${f(cy)} ${f(x2)} ${f(y2)}`, x: f(x2), y: f(y2), mobile: !!mobile };
 });
 
-/* ==================================================================
-   SITE DRAWING (beats 1-4): isometric, artboard coordinates
-================================================================== */
+/* The document frame crops the artboard to its own area */
 const SITE_VIEW = '150 96 700 448';
-const ISO = { ox: 500, oy: 412, c: 0.866, s: 0.5 };
-const iso = (x, y, z = 0) => [ISO.ox + (x - y) * ISO.c, ISO.oy + (x + y) * ISO.s - z];
-const pt = (q) => iso(...q).map(f).join(',');
-const pts = (...q) => q.map(pt).join(' ');
-const seg = (a, b, cls, extra = '') => {
-  const [x1, y1] = iso(...a), [x2, y2] = iso(...b);
-  return `<line class="${cls}" x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}" ${extra}/>`;
-};
 
-const BX = 120, BY = 70, FH = 34, FLOORS = capabilities.length, TOP = FLOORS * FH, PARAPET = 8;
-const GX = 245, GY = 175, GS = 35;
+/* ==================================================================
+   ARTWORK. Drawn like a technical illustration: real gradients for
+   material and light, fine hairlines for construction lines, soft
+   contact shadows, and one orange accent per beat. All gradients live
+   in <defs> (gradientDefs below) and are shared by every layer.
+================================================================== */
 
-/* ---- The solicitation -------------------------------------------- */
-const DOC = { x: 385, y: 150, w: 230, h: 304 };
-const docLines = [
-  [DOC.x + 22, DOC.y + 64, 150], [DOC.x + 22, DOC.y + 80, 186], [DOC.x + 22, DOC.y + 96, 120],
-  [DOC.x + 22, DOC.y + 176, 186], [DOC.x + 22, DOC.y + 192, 160], [DOC.x + 22, DOC.y + 208, 178],
-  [DOC.x + 22, DOC.y + 224, 132], [DOC.x + 22, DOC.y + 240, 170],
-];
-const docSVG = (attrs = '') => `<g class="seq-doc" ${attrs}>
-  <rect class="seq-doc__sheet" x="${DOC.x}" y="${DOC.y}" width="${DOC.w}" height="${DOC.h}" rx="3"/>
-  <rect class="seq-doc__title" x="${DOC.x + 22}" y="${DOC.y + 26}" width="104" height="12" rx="1.5"/>
-  <rect class="seq-doc__meta" x="${DOC.x + DOC.w - 70}" y="${DOC.y + 26}" width="48" height="12" rx="1.5"/>
-  ${docLines.map(([x, y, w]) => `<rect class="seq-doc__line" x="${x}" y="${y}" width="${w}" height="5" rx="2.5"/>`).join('')}
+/* ---- The solicitation: a paper RFP on a small stack ---------------- */
+const DOC = { x: 362, y: 118, w: 276, h: 360 };
+const dl = (x, y, w, cls = 'seq-doc__line') => `<rect class="${cls}" x="${f(x)}" y="${f(y)}" width="${f(w)}" height="2.6" rx="1.3"/>`;
+function docSVG(attrs = '') {
+  const { x, y, w, h } = DOC, L = x + 22, cx = x + w / 2, cy = y + h / 2;
+  const para = (y0, widths) => widths.map((ww, k) => dl(L, y0 + k * 8, ww)).join('');
+  return `<g class="seq-doc" ${attrs}>
+  <ellipse class="seq-doc__shadow" cx="${f(cx + 10)}" cy="${f(y + h + 14)}" rx="${f(w * 0.62)}" ry="16" fill="url(#seq-shadow)"/>
+  <rect class="seq-doc__back" x="${x}" y="${y}" width="${w}" height="${h}" rx="3" transform="rotate(5 ${cx} ${cy}) translate(16 8)"/>
+  <rect class="seq-doc__back seq-doc__back--2" x="${x}" y="${y}" width="${w}" height="${h}" rx="3" transform="rotate(-3.5 ${cx} ${cy}) translate(-12 6)"/>
+  <rect class="seq-doc__sheet" x="${x}" y="${y}" width="${w}" height="${h}" rx="3"/>
+  <rect class="seq-doc__mono" x="${L}" y="${y + 22}" width="24" height="24" rx="2"/>
+  <path class="seq-doc__mono-mark" d="M${L + 7} ${y + 29}h10M${L + 12} ${y + 29}v10M${L + 7} ${y + 39}h10"/>
+  <text class="seq-doc__head" x="${L + 34}" y="${y + 32}">REQUEST FOR PROPOSAL</text>
+  ${dl(L + 34, y + 38, 96)}
+  <rect class="seq-doc__meta" x="${x + w - 52}" y="${y + 26}" width="30" height="8" rx="1.5"/>
+  <line class="seq-doc__rule" x1="${L}" y1="${y + 60}" x2="${x + w - 22}" y2="${y + 60}"/>
+  <text class="seq-doc__h" x="${L}" y="${y + 80}">1. SCOPE OF WORK</text>
+  ${para(y + 88, [232, 220, 232, 176])}
   <g class="seq-doc__flag">
-    <rect class="seq-doc__flag-box" x="${DOC.x + 16}" y="${DOC.y + 116}" width="${DOC.w - 32}" height="40" rx="2" pathLength="1"/>
-    <rect class="seq-doc__flag-line" x="${DOC.x + 30}" y="${DOC.y + 128}" width="118" height="5" rx="2.5"/>
-    <rect class="seq-doc__flag-line" x="${DOC.x + 30}" y="${DOC.y + 140}" width="82" height="5" rx="2.5"/>
+    <rect class="seq-doc__swipe" x="${L - 6}" y="${y + 126}" width="${w - 32}" height="36" rx="2"/>
+    <rect class="seq-doc__swipe-edge" x="${L - 6}" y="${y + 126}" width="3" height="36"/>
+    <text class="seq-doc__h seq-doc__h--flag" x="${L + 4}" y="${y + 140}">2. SET-ASIDE</text>
+    ${dl(L + 4, y + 147, 196, 'seq-doc__flag-line')}${dl(L + 4, y + 155, 150, 'seq-doc__flag-line')}
   </g>
-  <line class="seq-doc__sign" x1="${DOC.x + 22}" y1="${DOC.y + 278}" x2="${DOC.x + 120}" y2="${DOC.y + 278}"/>
+  <text class="seq-doc__h" x="${L}" y="${y + 182}">3. PERIOD OF PERFORMANCE</text>
+  ${para(y + 190, [232, 210, 120])}
+  <g class="seq-doc__table">
+    <rect class="seq-doc__thead" x="${L}" y="${y + 226}" width="${w - 44}" height="14"/>
+    <rect class="seq-doc__tframe" x="${L}" y="${y + 226}" width="${w - 44}" height="56"/>
+    <line class="seq-doc__tline" x1="${L}" y1="${y + 254}" x2="${x + w - 22}" y2="${y + 254}"/>
+    <line class="seq-doc__tline" x1="${L + 46}" y1="${y + 226}" x2="${L + 46}" y2="${y + 282}"/>
+    <line class="seq-doc__tline" x1="${L + 170}" y1="${y + 226}" x2="${L + 170}" y2="${y + 282}"/>
+    ${dl(L + 8, y + 232, 26)}${dl(L + 54, y + 232, 70)}${dl(L + 178, y + 232, 40)}
+    ${dl(L + 8, y + 245, 18)}${dl(L + 54, y + 245, 100)}${dl(L + 178, y + 245, 30)}
+    ${dl(L + 8, y + 268, 18)}${dl(L + 54, y + 268, 84)}${dl(L + 178, y + 268, 34)}
+  </g>
+  <line class="seq-doc__sign" x1="${L}" y1="${y + h - 34}" x2="${L + 110}" y2="${y + h - 34}"/>
+  <text class="seq-doc__caption" x="${L}" y="${y + h - 23}">CONTRACTING OFFICER</text>
+  <line class="seq-doc__sign" x1="${x + w - 112}" y1="${y + h - 34}" x2="${x + w - 22}" y2="${y + h - 34}"/>
+  <text class="seq-doc__caption" x="${x + w - 112}" y="${y + h - 23}">DATE</text>
 </g>`;
-
-/* ---- Site plan: grid, footprint, dimensions, bubbles, north -------- */
-const LETTERS = 'ABCDEFG';
-const planSVG = (attrs = '') => {
-  let grid = '';
-  for (let y = -GY; y <= GY; y += GS) {
-    grid += seg([-GX, y, 0], [GX, y, 0], 'seq-plan__grid', `pathLength="1" opacity="${(1 - (Math.abs(y) / GY) * 0.7).toFixed(2)}"`);
-  }
-  for (let x = -GX; x <= GX; x += GS) {
-    grid += seg([x, -GY, 0], [x, GY, 0], 'seq-plan__grid', `pathLength="1" opacity="${(1 - (Math.abs(x) / GX) * 0.7).toFixed(2)}"`);
-  }
-  const bubbles = [-210, -140, -70, 0, 70, 140, 210].map((x, i) => {
-    const [cx, cy] = iso(x, -GY - 24, 0);
-    return `<g class="seq-plan__bubble"><circle cx="${f(cx)}" cy="${f(cy)}" r="9"/><text x="${f(cx)}" y="${f(cy)}">${LETTERS[i]}</text></g>`;
-  }).join('') + [-140, -70, 0, 70, 140].map((y, i) => {
-    const [cx, cy] = iso(-GX - 24, y, 0);
-    return `<g class="seq-plan__bubble"><circle cx="${f(cx)}" cy="${f(cy)}" r="9"/><text x="${f(cx)}" y="${f(cy)}">${i + 1}</text></g>`;
-  }).join('');
-  const dims = [
-    seg([-BX, BY + 8, 0], [-BX, BY + 54, 0], 'seq-plan__dim'), seg([BX, BY + 8, 0], [BX, BY + 54, 0], 'seq-plan__dim'),
-    seg([-BX, BY + 46, 0], [BX, BY + 46, 0], 'seq-plan__dim'),
-    seg([-BX - 6, BY + 40, 0], [-BX + 6, BY + 52, 0], 'seq-plan__dim'), seg([BX - 6, BY + 40, 0], [BX + 6, BY + 52, 0], 'seq-plan__dim'),
-    seg([BX + 8, BY, 0], [BX + 54, BY, 0], 'seq-plan__dim'), seg([BX + 8, -BY, 0], [BX + 54, -BY, 0], 'seq-plan__dim'),
-    seg([BX + 46, -BY, 0], [BX + 46, BY, 0], 'seq-plan__dim'),
-    seg([BX + 40, -BY - 6, 0], [BX + 52, -BY + 6, 0], 'seq-plan__dim'), seg([BX + 40, BY - 6, 0], [BX + 52, BY + 6, 0], 'seq-plan__dim'),
-  ].join('');
-  const [nx, ny] = iso(-GX + 20, -GY + 10, 0);
-  const north = `<g class="seq-plan__north"><circle cx="${f(nx)}" cy="${f(ny - 40)}" r="13"/><path d="M${f(nx)} ${f(ny - 52)}L${f(nx + 6)} ${f(ny - 34)}L${f(nx)} ${f(ny - 38)}L${f(nx - 6)} ${f(ny - 34)}Z"/></g>`;
-  return `<g class="seq-plan" ${attrs}>
-    <g class="seq-plan__grids" data-g="grid">${grid}</g>
-    <polygon class="seq-plan__foot" data-g="foot" points="${pts([-BX, -BY, 0], [BX, -BY, 0], [BX, BY, 0], [-BX, BY, 0])}" pathLength="1"/>
-    <g class="seq-plan__annot" data-g="annot">${dims}${bubbles}${north}</g>
-  </g>`;
-};
-
-/* Staging markers: crane, laydown, gate, site office */
-const markerXY = [[175, -130], [-190, -115], [40, 150], [195, 95]].map(([x, y]) => iso(x, y, 0));
-const markersSVG = () => `<g class="seq-markers" data-g="markers">${markerXY.map(([x, y]) =>
-  `<g class="seq-marker" data-marker><circle class="seq-marker__halo" cx="${f(x)}" cy="${f(y)}" r="13"/><circle class="seq-marker__dot" cx="${f(x)}" cy="${f(y)}" r="5.5"/></g>`).join('')}</g>`;
-
-/* ---- The building -------------------------------------------------- */
-/* Deterministic "lived-in" pattern of lit windows for the dusk beat */
-const litAt = (i, b, side) => ((i * 7 + b * 3 + (side === 'r' ? 5 : 0)) % 10) < 7;
-
-function floorSVG(i, { lit = false } = {}) {
-  const z0 = i * FH, z1 = z0 + FH;
-  let wins = '';
-  for (let b = 0; b < 8; b++) {
-    const door = i === 0 && (b === 3 || b === 4);
-    const x0 = -BX + b * 30 + 5, x1 = x0 + 20;
-    const zz0 = door ? z0 + 1 : z0 + (i === 0 ? 6 : 9), zz1 = z1 - 6;
-    const on = lit && (door || litAt(i, b, 'l'));
-    wins += `<polygon class="seq-win${door ? ' seq-win--door' : ''}${on ? ' is-lit' : ''}" data-lit="${door || litAt(i, b, 'l') ? 1 : 0}" points="${pts([x0, BY, zz0], [x1, BY, zz0], [x1, BY, zz1], [x0, BY, zz1])}"/>`;
-  }
-  for (let b = 0; b < 5; b++) {
-    const y0 = BY - b * 28 - 5, y1 = y0 - 18;
-    const zz0 = z0 + (i === 0 ? 6 : 9), zz1 = z1 - 6;
-    const on = lit && litAt(i, b, 'r');
-    wins += `<polygon class="seq-win seq-win--r${on ? ' is-lit' : ''}" data-lit="${litAt(i, b, 'r') ? 1 : 0}" points="${pts([BX, y0, zz0], [BX, y1, zz0], [BX, y1, zz1], [BX, y0, zz1])}"/>`;
-  }
-  const canopy = i === 0 ? `<polygon class="seq-canopy" points="${pts([-38, BY, FH - 4], [38, BY, FH - 4], [38, BY + 16, FH - 4], [-38, BY + 16, FH - 4])}"/>
-    <polygon class="seq-canopy seq-canopy--edge" points="${pts([-38, BY + 16, FH - 4], [38, BY + 16, FH - 4], [38, BY + 16, FH - 8], [-38, BY + 16, FH - 8])}"/>` : '';
-  return `<g class="seq-floor" data-floor="${i}">
-    <polygon class="seq-face seq-face--l" points="${pts([-BX, BY, z0], [BX, BY, z0], [BX, BY, z1], [-BX, BY, z1])}" pathLength="1"/>
-    <polygon class="seq-face seq-face--r" points="${pts([BX, BY, z0], [BX, -BY, z0], [BX, -BY, z1], [BX, BY, z1])}" pathLength="1"/>
-    ${wins}
-    <polyline class="seq-slab" points="${pts([-BX, BY, z1], [BX, BY, z1], [BX, -BY, z1])}"/>
-    ${canopy}
-  </g>`;
 }
 
-const TT = TOP + PARAPET;
-const roofSVG = (attrs = '') => `<g class="seq-roof" ${attrs}>
-  <polygon class="seq-face seq-face--l" points="${pts([-BX, BY, TOP], [BX, BY, TOP], [BX, BY, TT], [-BX, BY, TT])}"/>
-  <polygon class="seq-face seq-face--r" points="${pts([BX, BY, TOP], [BX, -BY, TOP], [BX, -BY, TT], [BX, BY, TT])}"/>
-  <polygon class="seq-roof__top" points="${pts([-BX, -BY, TT], [BX, -BY, TT], [BX, BY, TT], [-BX, BY, TT])}"/>
-  <polygon class="seq-roof__inset" points="${pts([-BX + 8, -BY + 8, TT], [BX - 8, -BY + 8, TT], [BX - 8, BY - 8, TT], [-BX + 8, BY - 8, TT])}"/>
-  <polygon class="seq-face seq-face--l" points="${pts([-55, 5, TT], [-5, 5, TT], [-5, 5, TT + 16], [-55, 5, TT + 16])}"/>
-  <polygon class="seq-face seq-face--r" points="${pts([-5, 5, TT], [-5, -35, TT], [-5, -35, TT + 16], [-5, 5, TT + 16])}"/>
-  <polygon class="seq-roof__top" points="${pts([-55, -35, TT + 16], [-5, -35, TT + 16], [-5, 5, TT + 16], [-55, 5, TT + 16])}"/>
-</g>`;
+/* ==================================================================
+   EXECUTE: the ionic honeycomb (net layer, artboard coordinates)
+   Each capability floats in as a charged cell, its orbit ring spinning,
+   and bonds to the Ionic mark at the center. Construction lines dock
+   on the left, professional and support lines on the right.
+================================================================== */
+const HC = { x: 500, y: 320 }, HR = 106, HD = Math.sqrt(3) * HR + 9;
+const HEX_ANGLE = { 'general-construction': 240, 'environmental-remediation': 180, grounds: 120, equipment: 300, consulting: 0, logistics: 60 };
+const hexPts = (cx, cy, r) => Array.from({ length: 6 }, (_, k) => {
+  const a = (Math.PI / 180) * (60 * k - 90);
+  return f(cx + r * Math.cos(a)) + ',' + f(cy + r * Math.sin(a));
+}).join(' ');
 
-const buildingSVG = ({ lit = false, roof = true } = {}) => `<g class="seq-building" data-g="building">
-  ${Array.from({ length: FLOORS }, (_, i) => floorSVG(i, { lit })).join('')}
-  ${roof ? roofSVG('data-g="roof"') : ''}
-</g>`;
+function ionSVG(c, i) {
+  const a = (Math.PI / 180) * HEX_ANGLE[c.id];
+  const x = f(HC.x + HD * Math.cos(a)), y = f(HC.y + HD * Math.sin(a));
+  const lines = hexLabels[c.id] || [c.short];
+  const top = y - ((lines.length - 1) * 20) / 2 + 14;
+  const tspans = lines.map((l, k) => `<tspan x="${x}" dy="${k ? 20 : 0}">${esc(l)}</tspan>`).join('');
+  return `<g class="seq-ion seq-ion--${c.group}" data-ion="${i}" data-x="${x}" data-y="${y}">
+      <ellipse class="seq-ion__orbit" cx="${x}" cy="${y}" rx="${HR + 26}" ry="${f((HR + 26) * 0.34)}" transform="rotate(-24 ${x} ${y})"/>
+      <polygon class="seq-ion__charge" points="${hexPts(x, y, HR + 5)}"/>
+      <polygon class="seq-ion__hex" points="${hexPts(x, y, HR - 2)}"/>
+      <polygon class="seq-ion__lit" points="${hexPts(x, y, HR - 2)}"/>
+      <polygon class="seq-ion__inset" points="${hexPts(x, y, HR - 11)}"/>
+      <text class="seq-ion__num" x="${x}" y="${f(top - 30)}">${String(i + 1).padStart(2, '0')}</text>
+      <text class="seq-ion__label" x="${x}" y="${f(top)}">${tspans}</text>
+    </g>`;
+}
 
-/* Silhouette of the finished building, for the one orange trace */
-const outlineD = 'M' + [
-  [-BX, BY, 0], [-BX, BY, TT], [-BX, -BY, TT], [BX, -BY, TT], [BX, -BY, 0], [BX, BY, 0],
-].map((q) => iso(...q).map(f).join(' ')).join('L') + 'Z';
+/* CLOSE OUT: the honeycomb's outer edge, for the one orange trace. Each
+   outer cell contributes its four outward corners, walked in order. */
+const outlineD = 'M' + [0, 60, 120, 180, 240, 300].flatMap((t) => {
+  const cx = HC.x + HD * Math.cos((Math.PI / 180) * t), cy = HC.y + HD * Math.sin((Math.PI / 180) * t), r = HR + 8;
+  return [t - 90, t - 30, t + 30, t + 90].map((v) => [cx + r * Math.cos((Math.PI / 180) * v), cy + r * Math.sin((Math.PI / 180) * v)]);
+}).map(([x, y]) => f(x) + ' ' + f(y)).join('L') + 'Z';
 const outlineSVG = (cls = '') => `<path class="seq-outline ${cls}" data-g="outline" d="${outlineD}" pathLength="1"/>`;
 
-/* Callout rides beside the floor that is being built */
-const calloutX = iso(BX, -BY, 0)[0] + 8;
-const floorMidY = Array.from({ length: FLOORS }, (_, i) => f(iso(BX, -BY, i * FH + FH / 2)[1]));
-
-/* Dusk: a warm glow behind the building and a pool of light at the door */
-const [poolX, poolY] = iso(0, BY + 34, 0);
-const duskSVG = (attrs = '') => `<g class="seq-dusk" ${attrs}>
-  <ellipse cx="500" cy="300" rx="340" ry="230" fill="url(#seq-glow)"/>
-  <ellipse cx="${f(poolX)}" cy="${f(poolY)}" rx="80" ry="22" fill="url(#seq-pool)"/>
+const honeySVG = (staticAll = false) => `<g class="seq-honey${staticAll ? ' is-static' : ''}" data-g="honey">
+  <polygon class="seq-ion__halo" points="${hexPts(HC.x, HC.y, HR + 14)}"/>
+  <g class="seq-ion seq-ion--core" data-core>
+    <polygon class="seq-ion__hex" points="${hexPts(HC.x, HC.y, HR - 2)}"/>
+    <image href="/assets/img/brand/mark-160.webp" x="${HC.x - 40}" y="${HC.y - 45}" width="80" height="90"/>
+  </g>
+  ${capabilities.map(ionSVG).join('')}
 </g>`;
-const gradientDefs = `<radialGradient id="seq-glow"><stop offset="0" stop-color="#F4DDB2" stop-opacity=".16"/><stop offset="1" stop-color="#F4DDB2" stop-opacity="0"/></radialGradient>
-  <radialGradient id="seq-pool"><stop offset="0" stop-color="#F4DDB2" stop-opacity=".45"/><stop offset="1" stop-color="#F4DDB2" stop-opacity="0"/></radialGradient>`;
+
+/* ---- Mobilize: the honeycomb as a blueprint ------------------------
+   Artboard coordinates, on the same center as the honeycomb, so each
+   dashed slot here is exactly where its capability docks in Execute. */
+const LETTERS = 'ABCDEFG';
+const slotXY = () => capabilities.map((c) => {
+  const a = (Math.PI / 180) * HEX_ANGLE[c.id];
+  return [HC.x + HD * Math.cos(a), HC.y + HD * Math.sin(a)];
+});
+
+function planSVG(attrs = '') {
+  /* Drawing grid, fading out from the center */
+  const X0 = 116, X1 = 884, Y0 = 8, Y1 = 632, STEP = 24;
+  const fade = (d, m) => Math.max(0.12, 1 - (d / m) * 0.85).toFixed(2);
+  let grid = '';
+  for (let y = Y0; y <= Y1; y += STEP) {
+    const major = Math.round((y - HC.y) / STEP) % 4 === 0;
+    grid += `<line class="seq-plan__grid${major ? '' : ' seq-plan__grid--minor'}" x1="${X0}" y1="${y}" x2="${X1}" y2="${y}" pathLength="1" opacity="${fade(Math.abs(y - HC.y), 320)}"/>`;
+  }
+  for (let x = X0; x <= X1; x += STEP) {
+    const major = Math.round((x - HC.x) / STEP) % 4 === 0;
+    grid += `<line class="seq-plan__grid${major ? '' : ' seq-plan__grid--minor'}" x1="${x}" y1="${Y0}" x2="${x}" y2="${Y1}" pathLength="1" opacity="${fade(Math.abs(x - HC.x), 380)}"/>`;
+  }
+
+  /* Slots: one dashed cell per capability, plus the core */
+  const slots = slotXY();
+  const slotSVG = slots.map(([x, y], i) => `<polygon class="seq-plan__slot" points="${hexPts(x, y, HR - 2)}"/>
+      <text class="seq-plan__slot-num" x="${f(x)}" y="${f(y + 36)}">${String(i + 1).padStart(2, '0')}</text>`).join('') +
+    `<polygon class="seq-plan__slot seq-plan__slot--core" points="${hexPts(HC.x, HC.y, HR - 2)}"/>
+      <polygon class="seq-plan__slot-inner" points="${hexPts(HC.x, HC.y, HR - 24)}"/>`;
+
+  /* Grid bubbles on the cell columns and rows, a north arrow, and an
+     overall dimension with ticks */
+  const cols = [...new Set(slots.map(([x]) => Math.round(x)).concat(HC.x))].sort((a, b) => a - b);
+  const rows = [...new Set(slots.map(([, y]) => Math.round(y)).concat(HC.y))].sort((a, b) => a - b);
+  const top = HC.y - HD * 0.866 - HR - 34, left = HC.x - HD - HR - 34;
+  const bubble = (cx, cy, t) => `<g class="seq-plan__bubble"><circle cx="${f(cx)}" cy="${f(cy)}" r="11"/><text x="${f(cx)}" y="${f(cy)}">${t}</text></g>`;
+  const guide = (x1, y1, x2, y2, cls = 'seq-plan__fine') => `<line class="${cls}" x1="${f(x1)}" y1="${f(y1)}" x2="${f(x2)}" y2="${f(y2)}"/>`;
+  const bubbles = cols.map((x, i) => guide(x, top + 11, x, HC.y + HD * 0.866 + HR) + bubble(x, top, LETTERS[i])).join('') +
+    rows.map((y, i) => guide(left + 11, y, HC.x + HD + HR, y) + bubble(left, y, i + 1)).join('');
+  const span = HD + HR * 0.866, dy = HC.y + HD * 0.866 + HR + 26;
+  const tick = (x, y) => `<line class="seq-plan__dim seq-plan__tick" x1="${f(x - 5)}" y1="${f(y + 5)}" x2="${f(x + 5)}" y2="${f(y - 5)}"/>`;
+  const dims = guide(HC.x - span, dy, HC.x + span, dy, 'seq-plan__dim') + tick(HC.x - span, dy) + tick(HC.x + span, dy) +
+    guide(HC.x - span, dy - 20, HC.x - span, dy + 6, 'seq-plan__dim') + guide(HC.x + span, dy - 20, HC.x + span, dy + 6, 'seq-plan__dim');
+  const nx = HC.x + HD + HR + 20, ny = top;
+  const north = `<g class="seq-plan__north"><circle cx="${f(nx)}" cy="${f(ny)}" r="15"/><circle class="seq-plan__north-in" cx="${f(nx)}" cy="${f(ny)}" r="2"/><path d="M${f(nx)} ${f(ny - 17)}L${f(nx + 6)} ${f(ny + 2)}L${f(nx)} ${f(ny - 2)}L${f(nx - 6)} ${f(ny + 2)}Z"/><text x="${f(nx)}" y="${f(ny - 26)}">N</text></g>`;
+
+  return `<g class="seq-plan" ${attrs}>
+    <g class="seq-plan__grids" data-g="grid">${grid}</g>
+    <g class="seq-plan__annot" data-g="annot">${bubbles}${dims}${north}${slotSVG}</g>
+    <g data-g="foot">
+      <path class="seq-plan__foot" d="${outlineD}" pathLength="1"/>
+      <path class="seq-plan__hatch" d="${outlineD}" fill="url(#seq-hatch)"/>
+    </g>
+  </g>`;
+}
+/* Hatch as one pattern fill: far cheaper to paint than clipped lines */
+const hatchDef = () => `<pattern id="seq-hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="10" stroke="#F3F4F6" stroke-opacity=".07" stroke-width="1"/></pattern>`;
+
+/* Staging: a crew pin drops onto each slot; the core gets the one orange pin */
+const markersSVG = () => {
+  const pin = ([x, y], cls) => `<g class="seq-marker ${cls}" data-marker>
+    <ellipse class="seq-marker__base" cx="${f(x)}" cy="${f(y)}" rx="12" ry="5"/>
+    <path class="seq-marker__pin" d="M${f(x)} ${f(y)}c-1.6-7-10-11-10-19a10 10 0 0 1 20 0c0 8-8.4 12-10 19z"/>
+    <circle class="seq-marker__dot" cx="${f(x)}" cy="${f(y - 19)}" r="3.8"/>
+  </g>`;
+  return `<g class="seq-markers" data-g="markers">${slotXY().map((p) => pin([p[0], p[1] + 8], 'seq-marker--crew')).join('')}${pin([HC.x, HC.y + 8], '')}</g>`;
+};
+
+/* Close out: a soft light behind the finished honeycomb */
+const duskSVG = (attrs = '') => `<g class="seq-dusk" ${attrs}>
+  <ellipse cx="${HC.x}" cy="${HC.y}" rx="420" ry="300" fill="url(#seq-glow)"/>
+</g>`;
+
+/* Shared gradients and clips */
+const gradientDefs = `
+  <radialGradient id="seq-glow"><stop offset="0" stop-color="#F3F4F6" stop-opacity=".12"/><stop offset="1" stop-color="#F3F4F6" stop-opacity="0"/></radialGradient>
+  <linearGradient id="seq-paper" x1="0" y1="0" x2=".35" y2="1"><stop offset="0" stop-color="#FAFAFB"/><stop offset="1" stop-color="#E3E5E9"/></linearGradient>
+  <linearGradient id="seq-paper-back" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="#C9CCD2"/><stop offset="1" stop-color="#9FA3AB"/></linearGradient>
+  <linearGradient id="seq-ion-c" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#43434B"/><stop offset="1" stop-color="#26262B"/></linearGradient>
+  <linearGradient id="seq-ion-p" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#26262C"/><stop offset="1" stop-color="#121215"/></linearGradient>
+  <linearGradient id="seq-ion-core" x1="0" y1="0" x2=".4" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DDE0E5"/></linearGradient>
+  <linearGradient id="seq-ion-lit" x1="0" y1="0" x2=".3" y2="1"><stop offset="0" stop-color="#F3F4F6" stop-opacity=".2"/><stop offset="1" stop-color="#F3F4F6" stop-opacity=".04"/></linearGradient>
+  <linearGradient id="seq-swipe" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#FC5809" stop-opacity=".28"/><stop offset="1" stop-color="#FC5809" stop-opacity=".1"/></linearGradient>
+  ${hatchDef()}`;
 
 /* ==================================================================
    PROOF: the drawing's title block (net layer, artboard coordinates)
@@ -290,9 +335,9 @@ export function heroDefs() {
     ${gradientDefs}
     <path id="seq-us" d="${map.d}"/>
     <symbol id="frame-open" viewBox="${SITE_VIEW}">${docSVG()}</symbol>
-    <symbol id="frame-mobilize" viewBox="${SITE_VIEW}">${planSVG()}${markersSVG()}</symbol>
-    <symbol id="frame-execute" viewBox="${SITE_VIEW}">${planSVG('opacity=".45"')}${buildingSVG({ roof: false })}</symbol>
-    <symbol id="frame-closeout" viewBox="${SITE_VIEW}">${duskSVG()}${planSVG('opacity=".3"')}${buildingSVG({ lit: true })}${outlineSVG('is-static')}</symbol>
+    <symbol id="frame-mobilize" viewBox="0 0 ${W} ${H}">${planSVG()}${markersSVG()}</symbol>
+    <symbol id="frame-execute" viewBox="0 0 ${W} ${H}">${honeySVG(true)}</symbol>
+    <symbol id="frame-closeout" viewBox="0 0 ${W} ${H}">${duskSVG()}<g class="is-lit">${honeySVG(true)}</g>${outlineSVG('is-static')}</symbol>
     <symbol id="frame-footprint" viewBox="0 0 ${W} ${H}"><use href="#seq-us" class="seq-us"/>${netSVG()}</symbol>
     <symbol id="frame-proof" viewBox="0 0 ${W} ${H}">${proofSVG(true)}</symbol>
   </defs>
@@ -308,7 +353,7 @@ const frameSVG = (id, view = SITE_FRAME) =>
 export function heroSequence() {
   const capHref = capStatement.href;
   const capAttrs = capStatement.available ? 'download' : '';
-  const capLabel = capStatement.available ? 'Download statement' : 'Get the statement';
+  const capLabel = capStatement.available ? 'Download the capability statement' : 'Get the capability statement';
   const svgOpen = (extra = '') =>
     `<svg class="seq__svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="xMidYMid meet" focusable="false" ${extra}>`;
 
@@ -321,20 +366,20 @@ export function heroSequence() {
          actually changing ever repaints. -->
     <div class="seq__visual" aria-hidden="true">
       <div class="seq__layer seq__layer--map" data-layer="map">${svgOpen()}<use href="#seq-us" class="seq-us"/></svg></div>
-      <div class="seq__layer seq__layer--net" data-layer="net">${svgOpen(`data-seq-svg data-nc="${f(ncXY[0])} ${f(ncXY[1])}" data-rows="${floorMidY.join(',')}" data-tb-rows="${tbRowY.join(',')}" data-tb-center="${TB.x + TB.w / 2} ${TB.y + TBH / 2}"`)}
+      <div class="seq__layer seq__layer--net" data-layer="net">${svgOpen(`data-seq-svg data-nc="${f(ncXY[0])} ${f(ncXY[1])}" data-tb-rows="${tbRowY.join(',')}" data-tb-center="${TB.x + TB.w / 2} ${TB.y + TBH / 2}"`)}
         <g data-g="net">${netSVG()}</g>
         ${proofSVG()}
       </svg></div>
-      <div class="seq__layer seq__layer--site" data-layer="site">${svgOpen()}
-        ${duskSVG('data-g="dusk"')}
+      <!-- The blueprint sits on its own layer (same camera as the site) so
+           the pins dropping onto it never repaint the drawing. -->
+      <div class="seq__layer seq__layer--site" data-layer="plan">${svgOpen()}
         ${planSVG('data-g="plan"')}
         ${markersSVG()}
-        ${buildingSVG()}
+      </svg></div>
+      <div class="seq__layer seq__layer--site" data-layer="site">${svgOpen()}
+        ${duskSVG('data-g="dusk"')}
+        ${honeySVG()}
         ${outlineSVG()}
-        <g class="seq-callout" data-g="callout">
-          <line x1="${f(calloutX)}" y1="0" x2="${f(calloutX + 64)}" y2="0"/>
-          <circle cx="${f(calloutX + 70)}" cy="0" r="5"/>
-        </g>
         ${docSVG('data-g="doc"')}
       </svg></div>
     </div>
@@ -348,35 +393,43 @@ export function heroSequence() {
             <p class="seq__kicker">${esc(site.descriptor)}</p>
             <h1 class="seq__title seq__title--hero" data-split>From contract to keys.</h1>
             <p class="seq__sub">Hand us the solicitation. We hand back a finished facility, for federal agencies, state and local governments, and private owners.</p>
+            <ul class="seq__creds" aria-label="Registrations">
+              <li>SDVOSB certified</li><li>SAM registered</li><li>UEI <span class="code">${site.ids.uei}</span></li><li>CAGE <span class="code">${site.ids.cage}</span></li>
+            </ul>
           </div>
         </div>
 
         <div class="seq__beat" data-beat="mobilize">
-          ${frameSVG('frame-mobilize')}
+          ${frameSVG('frame-mobilize', `0 0 ${W} ${H}`)}
           <div class="seq__text">
             <p class="seq__label"><span class="seq__num">01</span>Mobilize</p>
-            <h2 class="seq__title">The contract becomes a site plan.</h2>
-            <p class="seq__sub">Schedule, safety plan, and logistics are locked before crews and equipment arrive, staged where the work needs them.</p>
+            <h2 class="seq__title">The contract becomes a plan.</h2>
+            <p class="seq__sub">Schedule, safety plan, and logistics are locked before crews and equipment arrive. Every trade has its place before day one.</p>
           </div>
         </div>
 
         <div class="seq__beat" data-beat="execute">
-          ${frameSVG('frame-execute')}
+          ${frameSVG('frame-execute', `0 0 ${W} ${H}`)}
           <div class="seq__text">
             <p class="seq__label"><span class="seq__num">02</span>Execute</p>
-            <h2 class="seq__title">The plan becomes a building.</h2>
-            <ol class="seq__caps" aria-label="Capability lines">
-              ${capabilities.map((c, i) => `<li data-cap="${i}"><span class="seq__cap-num">${String(i + 1).padStart(2, '0')}</span><span>${esc(c.callout)}</span></li>`).join('')}
-            </ol>
+            <h2 class="seq__title">Every capability, bonded into one team.</h2>
+            <div class="seq__groups">
+              ${capabilityGroups.map((g) => `<div class="seq__group">
+                <p class="seq__group-label">${esc(g.name)}</p>
+                <ol class="seq__caps">
+                  ${capabilities.map((c, i) => (c.group !== g.id ? '' : `<li data-cap="${i}"><span class="seq__cap-num">${String(i + 1).padStart(2, '0')}</span><span>${esc(c.callout)}</span></li>`)).join('')}
+                </ol>
+              </div>`).join('')}
+            </div>
           </div>
         </div>
 
         <div class="seq__beat" data-beat="closeout">
-          ${frameSVG('frame-closeout')}
+          ${frameSVG('frame-closeout', `0 0 ${W} ${H}`)}
           <div class="seq__text">
             <p class="seq__label"><span class="seq__num">03</span>Close out</p>
-            <h2 class="seq__title">The building becomes yours.</h2>
-            <p class="seq__sub">Handed over complete, on time and on budget, with zero incidents and every record in your file. Then the lights come on.</p>
+            <h2 class="seq__title">The finished project becomes yours.</h2>
+            <p class="seq__sub">Handed over complete, on time and on budget, with zero incidents and every record in your file. Every capability accounted for.</p>
           </div>
         </div>
 
@@ -415,7 +468,6 @@ export function heroSequence() {
         <p class="seq__resolve-line">One accountable partner, from contract to keys.</p>
         <div class="btn-row seq__cta">
           ${btn(capHref, capLabel, { variant: 'primary', attrs: capAttrs })}
-          ${btn('/contact/', 'Talk to our team', { variant: 'secondary' })}
         </div>
       </div>
     </div>

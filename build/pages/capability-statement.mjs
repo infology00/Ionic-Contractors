@@ -58,7 +58,6 @@ ${pageHero({
           ${contents.map((c) => `<p class="doc__row reveal">${icons.check(15)}<span>${c}</span></p>`).join('')}
         </div>
         <div class="reveal">${btnRow(
-          capStatement.available ? capStatementBtn('secondary') : btn(mailHref, 'Email me the capability statement', { variant: 'secondary', icon: icons.mail(15) }),
           btn(site.phoneHref, `Call ${site.phone}`, { variant: 'ghost', arrow: false })
         )}</div>
       </div>

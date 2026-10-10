@@ -1,6 +1,6 @@
 import { site, capabilities, naicsList, locations } from '../site.mjs';
 import {
-  btn, sectionHead, trustBar, capabilityCard, pathCard, ctaBand, statTile,
+  btn, sectionHead, capabilityGroupsBlock, trustBar, capabilityCard, pathCard, ctaBand, statTile,
   differentiatorsStrip, marketGrid, deliveryCards, marquee, projectsSection,
 } from '../components.mjs';
 import { heroSequence } from '../hero.mjs';
@@ -8,7 +8,6 @@ import { heroSequence } from '../hero.mjs';
 const body = `
 ${heroSequence()}
 
-${trustBar()}
 
 <section class="section section--tight" aria-labelledby="why-ionic">
   <div class="wrap">
@@ -21,18 +20,14 @@ ${trustBar()}
   <div class="wrap">
     ${sectionHead({
       eyebrow: 'Capabilities',
-      title: 'Led by general construction.<br>Supported by the services around it.',
-      lead: `${capabilities.length} capability lines, built on the NAICS codes in our capability statement. Each one stands alone, or rounds out a construction scope on the same site.`,
+      title: 'Two lines of business. One accountable team.',
+      lead: `${capabilities.length} capability lines across construction and non-construction services, each mapped to the NAICS codes buyers search by.`,
       id: 'capability-snapshot',
     })}
-    <div class="grid grid--caps">
-      ${capabilities.map((c, i) => capabilityCard(c, { index: i })).join('')}
-    </div>
+    ${capabilityGroupsBlock((c, i) => capabilityCard(c, { index: i, level: 4, feature: false }))}
     <div class="mt-8 reveal">${btn('/capabilities/', 'See the full capability matrix', { variant: 'secondary' })}</div>
   </div>
 </section>
-
-${marquee()}
 
 <section class="section" aria-labelledby="markets-title">
   <div class="wrap">
@@ -79,7 +74,7 @@ ${marquee()}
     ${sectionHead({
       eyebrow: 'Work with Ionic',
       title: 'Two ways to work with Ionic',
-      lead: 'Whichever side of the requirement you are on, the path to a contract is short.',
+      lead: 'Agencies and owners use Submit an RFP at the top of every page. Prime contractors use Partner with us below.',
       id: 'dual-path',
       center: true,
     })}
@@ -93,8 +88,6 @@ ${marquee()}
           'Set-aside and sole-source eligible',
           'Documentation ready for a fast award',
         ],
-        href: '/federal-contracting/',
-        cta: 'How to solicit or award',
       })}
       ${pathCard({
         label: 'For prime contractors',
@@ -105,8 +98,6 @@ ${marquee()}
           'General construction and trades capability',
           'Subcontract, JV, or mentor-protégé',
         ],
-        href: '/teaming/',
-        cta: 'Start a teaming conversation',
       })}
     </div>
   </div>

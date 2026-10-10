@@ -960,3 +960,37 @@ address.footer__address a { color: var(--c-text); text-decoration: none; display
 
 /* Featured tile keeps its graphite ground on any band (beats .theme-gray .card) */
 .card.card--feature, .theme-gray .card.card--feature { background-color: var(--brand-graphite); box-shadow: var(--shadow); }
+
+/* Mobile drawer: the RFP action, styled as a button but deliberately not
+   a .btn (the header already carries the same intent). */
+.drawer__cta { display: inline-flex; align-items: center; justify-content: space-between; gap: var(--s-3); min-block-size: 3.125rem; padding: 0.75rem 1.25rem; border-radius: var(--r-sm); background: var(--brand-black); color: #fff; font-weight: 650; font-stretch: 104%; text-decoration: none; transition: transform var(--dur-fast) var(--ease-out); }
+.drawer__cta:active { transform: scale(0.97); }
+
+/* ==================================================================
+   LINES OF BUSINESS: construction vs professional & support services
+================================================================== */
+.cap-groups { display: grid; gap: clamp(3rem, 2rem + 3vw, 5rem); }
+.cap-group__head {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: var(--s-2) var(--s-5);
+  align-items: baseline;
+  margin-block-end: var(--s-6);
+  padding-block-start: var(--s-5);
+  border-block-start: 2px solid var(--c-text);
+}
+.cap-group__num { font-family: var(--font-mono); font-size: var(--fs-sm); color: var(--c-text-3); }
+.cap-group__title { font-size: var(--fs-h3); font-weight: 700; font-stretch: 112%; letter-spacing: -0.02em; line-height: 1.15; }
+.cap-group__blurb { grid-column: 2; color: var(--c-text-2); max-inline-size: 56ch; }
+
+.table__group th {
+  padding-block: var(--s-3);
+  background: var(--c-surface-3);
+  font-size: var(--fs-label);
+  font-weight: 650;
+  font-stretch: var(--stretch-label);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--c-text-2);
+}
+@media (max-width: 39.999rem) { .table tbody tr.table__group { display: block; } }

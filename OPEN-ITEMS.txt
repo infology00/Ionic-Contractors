@@ -1,5 +1,5 @@
 ===============================================================================
-OPEN ITEMS — IONIC CONTRACTORS WEBSITE  (V7)
+OPEN ITEMS — IONIC CONTRACTORS WEBSITE  (V13)
 ===============================================================================
 
 Part A ticks off the round-2 handoff. Part B is what we still need from you.
@@ -142,6 +142,64 @@ V7 PREMIUM PASS + BLUEPRINT STORY
 [ ] Note for the client: the handoff asked for hex cells as the
     animation's structural unit. V7 replaces them with a blueprint
     drawing at the site owner's request; confirm with the client.
+
+V9 CHANGES
+[x] Execute beat: each capability floats in as a charged ion hex and
+    bonds into a honeycomb around the Ionic mark (construction left,
+    professional & support right), then condenses into the building.
+[x] Capabilities split into two lines of business everywhere: home,
+    Capabilities page, market pages, NAICS matrix, hero list.
+[x] New line: Logistics & Ground Transportation (541614, 485999).
+    Management & Technical Consulting now 541611, 541618, 541690.
+[x] Buttons: one per destination per page, enforced by the build.
+    Header: Submit an RFP (replaces Team with Ionic, which duplicated
+    the Teaming nav item). Closing band: Have a requirement? Talk to us
+    directly, with direct contact and at most one Partner with us.
+[x] Hero credential strip (SDVOSB, SAM, UEI, CAGE), per the reference
+    sites list.
+[ ] Confirm group names and line names against the capability statement
+    PDF when it arrives.
+
+V13 CHANGES
+[x] Building drawing removed from the closing band above the footer.
+    Inner-page hero art redrawn as the honeycomb blueprint (no building).
+[x] Capabilities nav item has a dropdown: Construction services and
+    Non-construction services (also in the mobile menu). The second group
+    is named Non-construction services site-wide.
+[x] NAICS codes visible on every page in the footer (all 16, including
+    541611, 541614, 541618, 485999); primary 236220 highlighted.
+[x] Consistency pass: 16px for all body copy (14px only for meta),
+    every section head left-aligned, footer links on one rhythm with the
+    capabilities split by group, outlined marquee removed from home.
+
+V12 CHANGES
+[x] Mobilize (step 01) no longer shows a building site plan. It is now
+    a blueprint of the honeycomb: a drawing grid, grid bubbles, a north
+    arrow, and one dashed slot per capability around the Ionic core.
+    A crew pin drops onto each slot (the core gets the one orange pin).
+    In Execute each capability docks into its own slot.
+[x] Mobilize copy: "The contract becomes a plan." ... "Every trade has
+    its place before day one."
+[x] Performance: the blueprint has its own layer and a pattern hatch.
+
+V11 CHANGES
+[x] Close out (step 03) shows the Ionic honeycomb again, per the dev
+    handoff's hex direction: the building is removed. One orange trace
+    runs around the finished honeycomb, then each capability cell lights
+    up. The honeycomb then shrinks onto North Carolina on the map.
+[x] Close out copy: "The finished project becomes yours."
+
+V10 CHANGES
+[x] Hero artwork redrawn as technical illustration: paper RFP stack with
+    a highlighter on the set-aside clause; site plan with grid, road,
+    property line, trees, hatched footprint, grid bubbles and north arrow;
+    shaded building with glazing, mullions, roof units and lit windows at
+    dusk; ion cells with orbit rings and a halo around the Ionic mark.
+[x] Equal spacing: page margin = gap between copy and artwork = gap to
+    the window edge. The camera sizes each beat's artwork to fill that
+    column (measured at load and on resize).
+[x] Artwork column fades softly at both edges instead of a hard cut.
+[x] Step rail centered vertically in the visible stage, ticks only.
 
 -------------------------------------------------------------------------------
 B. STILL NEEDED FROM YOU

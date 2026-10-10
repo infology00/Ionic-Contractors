@@ -196,3 +196,43 @@ html:not(.motion-ok) .marquee__track > [aria-hidden='true'] { display: none; }
 .self-start { align-self: flex-start; }
 .muted { color: var(--c-text-3); }
 .max-measure { max-width: var(--measure); }
+
+/* ==================================================================
+   V13 CONSISTENCY PASS
+   One body size for every paragraph that is read (16px); 14px is for
+   meta only (labels, captions, legal). Every section head aligns left.
+   Footer links share one rhythm, wrapped or not.
+================================================================== */
+.card__body, .diff__body, .step__body, .person__bio, .location__note,
+.stat__note, .naics-row__title, .check-list li { font-size: var(--fs-body); line-height: 1.6; }
+.diff__body { max-inline-size: 34ch; }
+.diff__title { font-size: var(--fs-h4); }
+
+.section-head--center, .section-head--center .lead { margin-inline: 0; text-align: start; }
+.section-head--center::before { margin-inline: 0; }
+
+/* Primary nav: two-line menu items */
+.nav__menu { min-inline-size: 19rem; }
+.nav__menu-text { display: flex; flex-direction: column; gap: 2px; }
+.nav__menu-text small { font-size: var(--fs-label); font-weight: 500; color: var(--c-text-3); letter-spacing: 0; }
+.nav__menu a:has(.nav__menu-text) { padding-block: var(--s-3); }
+
+/* Footer */
+.footer { border-block-start: 1px solid var(--c-line); padding-block-start: var(--s-9); }
+@media (min-width: 64rem) { .footer__grid { grid-template-columns: 1.35fr 1.15fr 1fr 1fr; gap: var(--s-8); } }
+.footer__list { gap: 0; }
+.footer__list li { display: flex; }
+.footer__link { min-block-size: 0; padding-block: 0.4rem; line-height: 1.4; }
+.footer__sub { margin-block: var(--s-3) var(--s-1); font-size: var(--fs-label); font-weight: 650; color: var(--c-text); letter-spacing: 0.04em; }
+.footer__heading + .footer__sub { margin-block-start: 0; }
+address.footer__address { line-height: 1.7; }
+address.footer__address a { min-block-size: 0; }
+.footer__naics { margin-block-start: var(--s-9); padding-block-start: var(--s-6); border-block-start: 1px solid var(--c-line); display: grid; gap: var(--s-4); }
+@media (min-width: 64rem) { .footer__naics { grid-template-columns: auto 1fr auto; align-items: center; gap: var(--s-6); } .footer__naics .footer__heading { margin: 0; } }
+.footer__codes { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.footer__codes li { padding: 0.25rem 0.5rem; border: 1px solid var(--c-line-mid); border-radius: var(--r-sm); font-size: var(--fs-label); color: var(--c-text-2); }
+.footer__codes li.is-primary { color: var(--c-text); border-color: var(--c-line-strong); }
+.footer__naics + .footer__bottom { margin-block-start: var(--s-6); }
+
+/* Blueprint motif: dashed slots */
+.bp-dash { stroke-dasharray: 4 4; }

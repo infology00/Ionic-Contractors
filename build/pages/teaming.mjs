@@ -59,7 +59,7 @@ ${pageHero({
       <article class="card reveal" style="--reveal-delay:120ms">
         <span class="card__icon">${icons.route()}</span>
         <h3 class="card__title">Broad supporting services</h3>
-        <p class="card__body">Environmental remediation, grounds and vegetation management, equipment maintenance, and consulting to round out a scope.</p>
+        <p class="card__body">Remediation, grounds, equipment maintenance, consulting, logistics, and ground transportation to round out a scope.</p>
       </article>
       <article class="card reveal" style="--reveal-delay:180ms">
         <span class="card__icon">${icons.doc()}</span>
@@ -120,13 +120,13 @@ ${pageHero({
         <span class="card__icon">${icons.doc()}</span>
         <h3 class="card__title">Building a proposal now?</h3>
         <p class="card__body">The capability statement carries the detail your proposal team needs, including principal experience.</p>
-        <p class="mt-4">${capStatementBtn('secondary', { sm: true })}</p>
       </article>
     </div>
   </div>
 </section>
 
 ${ctaBand({
+  action: null,
   title: 'Add a certified SDVOSB to your team.',
   lead: 'Send the opportunity and the scope. We will tell you quickly whether Ionic is the right partner for it.',
 })}

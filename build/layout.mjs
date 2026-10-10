@@ -5,7 +5,7 @@
 
 import {
   site, nav, utilityNav, legalNav, addressLine, capabilities, markets, locations,
-  naicsList, capStatement, canonicalFor,
+  naicsList, capStatement, canonicalFor, intents,
 } from './site.mjs';
 import { esc, icons, logoImg } from './components.mjs';
 
@@ -31,7 +31,7 @@ function organizationLD() {
     image: abs('/assets/img/og-default.jpg'),
     slogan: site.tagline,
     description:
-      'Ionic Contractors is a Service-Disabled Veteran-Owned Small Business (SDVOSB) delivering general construction, environmental remediation, grounds and vegetation management, equipment maintenance, and management consulting to federal agencies, state and local governments, and private owners.',
+      'Ionic Contractors is a Service-Disabled Veteran-Owned Small Business (SDVOSB) delivering general construction, environmental remediation, grounds and vegetation management, equipment maintenance, management consulting, logistics, and ground transportation to federal agencies, state and local governments, and private owners.',
     telephone: '+1-' + site.phone,
     email: site.email,
     address: {
@@ -87,6 +87,8 @@ function organizationLD() {
       'Grounds maintenance and vegetation management',
       'Equipment maintenance and repair',
       'Management consulting',
+      'Logistics consulting',
+      'Ground passenger transportation',
       'Subcontracting and teaming',
     ],
     contactPoint: {
@@ -143,7 +145,7 @@ function utilityLink(item) {
 
 function header(currentPath) {
   const isCurrent = isCurrentFor(currentPath);
-  const inMarkets = (item) => item.children && (isCurrent(item.href) || item.children.some((c) => isCurrent(c.href)));
+  const inMenu = (item) => item.children && (isCurrent(item.href) || item.children.some((c) => isCurrent(c.href)));
 
   return `<header class="header" data-header data-scrolled="false">
     <div class="utility">
@@ -163,19 +165,19 @@ function header(currentPath) {
 
         <nav class="nav" aria-label="Primary">
           ${nav.map((item) => item.children ? `<div class="nav__item" data-menu>
-            <a class="nav__link" href="${item.href}"${inMarkets(item) ? ' aria-current="page"' : ''}>${esc(item.label)}</a>
+            <a class="nav__link" href="${item.href}"${inMenu(item) ? ' aria-current="page"' : ''}>${esc(item.label)}</a>
             <button class="nav__toggle" type="button" aria-expanded="false" aria-controls="menu-${item.label.toLowerCase()}" data-menu-toggle>
               ${icons.chevron(14)}<span class="sr-only">${esc(item.label)} submenu</span>
             </button>
             <div class="nav__menu" id="menu-${item.label.toLowerCase()}">
-              ${item.children.map((c) => `<a href="${c.href}"${isCurrent(c.href) ? ' aria-current="page"' : ''}>${esc(c.label)}${icons.arrow(14)}</a>`).join('')}
+              ${item.children.map((c) => `<a href="${c.href}"${isCurrent(c.href) ? ' aria-current="page"' : ''}>${c.desc ? `<span class="nav__menu-text"><span>${esc(c.label)}</span><small>${esc(c.desc)}</small></span>` : esc(c.label)}${icons.arrow(14)}</a>`).join('')}
             </div>
           </div>` : `<div class="nav__item"><a class="nav__link" href="${item.href}"${
             isCurrent(item.href) ? ' aria-current="page"' : ''}>${esc(item.label)}</a></div>`).join('')}
         </nav>
 
         <div class="header__actions">
-          <a class="btn btn--dark btn--sm header__cta" href="/teaming/">Team with Ionic</a>
+          <a class="btn btn--dark btn--sm header__cta" href="${intents.rfp.href}">${intents.rfp.label}</a>
           <button class="menu-btn" type="button" data-menu-btn
                   aria-expanded="false" aria-controls="site-drawer">
             <span class="menu-btn__bars" aria-hidden="true"><span></span><span></span><span></span></span>
@@ -213,7 +215,7 @@ function drawer(currentPath) {
         }`).join('')}
       </nav>
       <div class="drawer__foot">
-        <a class="btn btn--dark" href="${capStatement.href}"${capStatement.available ? ' download' : ''}>Capability statement</a>
+        <a class="drawer__cta" href="${intents.rfp.href}">${intents.rfp.label}${icons.arrow(16)}</a>
         <div class="drawer__contact">
           <a href="${site.phoneHref}">${icons.phone(16)}${site.phone}</a>
           <a href="mailto:${site.email}">${icons.mail(16)}${site.email}</a>
@@ -228,10 +230,8 @@ function drawer(currentPath) {
    FOOTER
 ================================================================== */
 function footer() {
-  const capsNav = [
-    ...capabilities.map((c) => ({ href: `/capabilities/#${c.id}`, label: c.short })),
-    { href: '/capabilities/#matrix', label: 'Capability matrix' },
-  ];
+  const capLinks = (group) => capabilities.filter((c) => c.group === group)
+    .map((c) => `<li><a class="footer__link" href="/capabilities/#${c.id}">${esc(c.short)}</a></li>`).join('');
   const workNav = [
     ...markets.map((m) => ({ href: m.href, label: m.title })),
     { href: '/teaming/', label: 'Teaming with primes' },
@@ -256,9 +256,10 @@ function footer() {
 
         <div>
           <h2 class="footer__heading">Capabilities</h2>
-          <ul class="footer__list">
-            ${capsNav.map((i) => `<li><a class="footer__link" href="${i.href}">${esc(i.label)}</a></li>`).join('')}
-          </ul>
+          <p class="footer__sub">Construction</p>
+          <ul class="footer__list">${capLinks('construction')}</ul>
+          <p class="footer__sub">Non-construction</p>
+          <ul class="footer__list">${capLinks('professional')}</ul>
         </div>
 
         <div>
@@ -278,6 +279,14 @@ function footer() {
           </address>
           <p style="margin-top:var(--s-4)"><a class="footer__link" href="/contact/">Send an inquiry ${icons.arrow(13)}</a></p>
         </div>
+      </div>
+
+      <div class="footer__naics">
+        <h2 class="footer__heading">NAICS codes</h2>
+        <ul class="footer__codes">
+          ${naicsList.map((n) => `<li class="code${n.code === '236220' ? ' is-primary' : ''}" title="${esc(n.title || '')}">${n.code}</li>`).join('')}
+        </ul>
+        <a class="footer__link" href="/capabilities/#matrix">Capability matrix ${icons.arrow(13)}</a>
       </div>
 
       <div class="footer__bottom">

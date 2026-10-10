@@ -88,7 +88,10 @@ export const markets = [
 
 export const nav = [
   { href: '/about/',        label: 'About' },
-  { href: '/capabilities/', label: 'Capabilities' },
+  { href: '/capabilities/', label: 'Capabilities', children: [
+    { href: '/capabilities/#construction', label: 'Construction services', desc: 'General construction, environmental remediation, grounds' },
+    { href: '/capabilities/#professional', label: 'Non-construction services', desc: 'Equipment, consulting, logistics and transportation' },
+  ] },
   { href: '/markets/',      label: 'Markets', children: markets.map((m) => ({ href: m.href, label: m.label })) },
   { href: '/teaming/',      label: 'Teaming' },
   { href: '/contact/',      label: 'Contact' },
@@ -170,11 +173,59 @@ export const capabilities = [
     name: 'Management & Technical Consulting',
     short: 'Management & Technical Consulting',
     callout: 'Management & technical consulting',
-    naics: ['541611', '541690'],
-    blurb: 'Program and project management support, and technical consulting where a requirement calls for targeted expertise.',
+    naics: ['541611', '541618', '541690'],
+    blurb: 'Program and project management support, management consulting, and technical consulting where a requirement calls for targeted expertise.',
     icon: 'compass',
   },
+  {
+    id: 'logistics',
+    name: 'Logistics & Ground Transportation',
+    short: 'Logistics & Ground Transportation',
+    callout: 'Logistics & ground transportation',
+    naics: ['541614', '485999'],
+    blurb: 'Logistics and physical-distribution planning, and ground passenger transportation for crews, staff, and program support.',
+    icon: 'route',
+  },
 ];
+
+/* Two top-level lines of business. Every capability carries one. */
+export const capabilityGroups = [
+  {
+    id: 'construction',
+    name: 'Construction services',
+    blurb: 'Building, site, and environmental work delivered under one general contractor.',
+    lines: ['general-construction', 'environmental-remediation', 'grounds'],
+  },
+  {
+    id: 'professional',
+    name: 'Non-construction services',
+    blurb: 'Equipment, consulting, logistics, and transportation support that stands alone or rounds out a project.',
+    lines: ['equipment', 'consulting', 'logistics'],
+  },
+];
+capabilities.forEach((c) => { c.group = capabilityGroups.find((g) => g.lines.includes(c.id)).id; });
+export const capsIn = (groupId) => capabilities.filter((c) => c.group === groupId);
+
+/* Label lines for the hero honeycomb (one short phrase per line) */
+export const hexLabels = {
+  'general-construction': ['General', 'Construction', '& Trades'],
+  'environmental-remediation': ['Environmental', 'Remediation'],
+  grounds: ['Grounds &', 'Vegetation', 'Management'],
+  equipment: ['Equipment', 'Maintenance', '& Sourcing'],
+  consulting: ['Management &', 'Technical', 'Consulting'],
+  logistics: ['Logistics &', 'Ground', 'Transportation'],
+};
+
+/* ------------------------------------------------------------------
+   CONVERSION INTENTS: one button per destination per page.
+   The header carries "Submit an RFP" on every page, so no other button
+   may point at the RFP form; "Partner with us" is the second intent.
+   The build audit fails if two buttons on a page share a destination.
+------------------------------------------------------------------- */
+export const intents = {
+  rfp: { label: 'Submit an RFP', href: '/federal-contracting/#invite-to-bid' },
+  partner: { label: 'Partner with us', href: '/teaming/#teaming-form' },
+};
 
 /* Full NAICS list for the Federal Contracting page — GC primary first. */
 export const naicsList = [
@@ -190,7 +241,10 @@ export const naicsList = [
   { code: '423810', title: 'Construction and Mining Machinery and Equipment Merchant Wholesalers' },
   { code: '423820', title: 'Farm and Garden Machinery and Equipment Merchant Wholesalers' },
   { code: '541611', title: 'Administrative Management and General Management Consulting Services' },
+  { code: '541618', title: 'Other Management Consulting Services' },
   { code: '541690', title: 'Other Scientific and Technical Consulting Services' },
+  { code: '541614', title: 'Process, Physical Distribution, and Logistics Consulting Services' },
+  { code: '485999', title: 'All Other Transit and Ground Passenger Transportation' },
 ];
 
 /* Product Service Codes (federal) */

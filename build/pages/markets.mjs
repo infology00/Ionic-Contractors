@@ -1,7 +1,7 @@
 import { site, capabilities, markets } from '../site.mjs';
 import {
   pageHero, sectionHead, ctaBand, icons, btn, btnRow, ctaPrimary, ctaSecondary,
-  marketGrid, deliveryCards, esc, trustBar, faqLD, accordion,
+  marketGrid, deliveryCards, capabilityGroupsBlock, esc, trustBar, faqLD, accordion,
 } from '../components.mjs';
 
 const crumbsFor = (label, href) => [{ href: '/markets/', label: 'Markets' }, { href, label }];
@@ -9,14 +9,12 @@ const crumbsFor = (label, href) => [{ href: '/markets/', label: 'Markets' }, { h
 /* Capability cards scoped to a market: same lines, market-specific
    examples. Keeps every page consistent with the capability matrix. */
 function capsFor(examples) {
-  return `<div class="grid grid--2">
-    ${capabilities.map((c, i) => `<article class="card reveal" style="--reveal-delay:${i * 60}ms">
+  return capabilityGroupsBlock((c, i) => `<article class="card reveal" style="--reveal-delay:${i * 60}ms">
       <span class="card__icon">${icons[c.icon]()}</span>
-      <h3 class="card__title">${esc(c.name)}</h3>
+      <h4 class="card__title">${esc(c.name)}</h4>
       <p class="card__body">${esc(examples[c.id])}</p>
       <div class="naics-cell">${c.naics.map((n) => `<span class="naics-chip">${n}</span>`).join('')}</div>
-    </article>`).join('')}
-  </div>`;
+    </article>`);
 }
 
 /* ==================================================================
@@ -131,6 +129,7 @@ ${pageHero({
       grounds: 'Grounds, landscaping, and vegetation management for parks, campuses, and rights-of-way.',
       equipment: 'Maintenance and sourcing of public-works, grounds, and construction equipment.',
       consulting: 'Program and project management support for capital and maintenance programs.',
+      logistics: 'Logistics planning, and ground transportation for staff, crews, and public programs.',
     })}
   </div>
 </section>
@@ -195,6 +194,7 @@ ${pageHero({
       grounds: 'Landscaping, grounds maintenance, and vegetation management for campuses and commercial sites.',
       equipment: 'Repair, maintenance, and sourcing of commercial, industrial, and grounds equipment.',
       consulting: 'Owner’s-side project management and technical consulting.',
+      logistics: 'Logistics and distribution consulting, and ground transportation for employees and sites.',
     })}
   </div>
 </section>

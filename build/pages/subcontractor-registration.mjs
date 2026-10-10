@@ -81,7 +81,7 @@ ${pageHero({
       <article class="card reveal">
         <span class="card__icon">${icons.building()}</span>
         <h3 class="card__title">Across every capability line</h3>
-        <p class="card__body">Construction trades, environmental remediation, grounds and vegetation management, equipment maintenance, and consulting.</p>
+        <p class="card__body">Construction trades, environmental remediation, grounds and vegetation management, equipment maintenance, consulting, logistics, and ground transportation.</p>
       </article>
       <article class="card reveal" style="--reveal-delay:60ms">
         <span class="card__icon">${icons.clock()}</span>

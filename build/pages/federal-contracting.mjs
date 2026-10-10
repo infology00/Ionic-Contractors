@@ -70,7 +70,7 @@ ${pageHero({
   eyebrow: 'For contracting officers',
   title: 'How to work with Ionic.',
   lead: 'Every identifier you need to solicit, evaluate, and award, in one place and ready to paste into your file.',
-  actions: btnRow(ctaPrimary(), btn('#invite-to-bid', 'Invite Ionic to bid', { variant: 'secondary', arrow: false })),
+  actions: btnRow(ctaPrimary()),
 })}
 
 <section class="section" aria-labelledby="registrations">
@@ -157,7 +157,6 @@ ${pageHero({
           <div>
             <h3 class="step__title">Get the capability statement</h3>
             <p class="step__body">Capability detail, NAICS and PSC codes, locations, and the principals&rsquo; operator experience, in one document for the file.</p>
-            <p class="mt-3">${capStatementBtn('secondary', { sm: true })}</p>
           </div>
         </div>
         <div class="step reveal">
@@ -165,7 +164,6 @@ ${pageHero({
           <div>
             <h3 class="step__title">Invite Ionic to bid</h3>
             <p class="step__body">Send the agency, solicitation number, NAICS, due date, and point of contact using the form below.</p>
-            <p class="mt-3">${btn('#invite-to-bid', 'Invite Ionic to bid', { variant: 'secondary', sm: true, arrow: false })}</p>
           </div>
         </div>
         <div class="step reveal">

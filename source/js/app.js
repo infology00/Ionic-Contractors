@@ -444,7 +444,7 @@
 
      Performance model: the artwork is three stacked SVG layers that
      share one 1000 x 640 coordinate system.
-       site  document, site plan, building    (small; repaints early)
+       site  document, site plan, honeycomb   (small; repaints early)
        map   the ~1,000-cell US silhouette    (rasterized once, then
                                                only moved/faded)
        net   hubs, partner lines, title block (small; repaints late)
@@ -457,22 +457,20 @@
 
     var pin = $('[data-seq-pin]', seq);
     var layer = function (n) { return $('[data-layer="' + n + '"]', seq); };
-    var siteL = layer('site'), mapL = layer('map'), netL = layer('net');
+    var siteL = layer('site'), planL = layer('plan'), mapL = layer('map'), netL = layer('net');
     var netSvg = $('[data-seq-svg]', seq);
     var g = function (name) { return $('[data-g="' + name + '"]', seq); };
     var nums = function (attr) { return netSvg.getAttribute(attr).split(/[ ,]/).map(Number); };
     var nc = nums('data-nc');
-    var floorY = nums('data-rows');
     var tbRows = nums('data-tb-rows');
     var tbC = nums('data-tb-center');
 
     var doc = g('doc'), plan = g('plan'), grid = g('grid'), foot = g('foot'), annot = g('annot');
-    var markers = g('markers'), building = g('building'), roof = g('roof'), outline = g('outline');
-    var callout = g('callout'), dusk = g('dusk'), net = g('net'), proof = g('proof'), plock = g('plock');
+    var markers = g('markers'), outline = g('outline');
+    var honey = g('honey'), core = $('[data-core]', seq), ions = $$('[data-ion]', seq), dusk = g('dusk'), net = g('net'), proof = g('proof'), plock = g('plock');
     var gridLines = $$('line', grid);
     var markerEls = $$('[data-marker]', markers);
-    var floors = $$('[data-floor]', building);
-    var litWins = $$('.seq-win[data-lit="1"]', building);
+    var litCells = $$('.seq-ion__lit', honey);
     var tbRowsEls = $$('[data-prow]', proof);
     var netLines = $$('.seq-net__line', net);
     var netNodes = $$('.seq-net__node', net);
@@ -491,33 +489,81 @@
     /* Decode the resolve logo up front so the last beat never waits on it. */
     if (logo) { logo.loading = 'eager'; if (logo.decode) logo.decode().catch(function () {}); }
 
-    /* Artboard point -> pixel position inside an untransformed layer.
-       The net layer is never scaled, so its CTM is the reference. */
+    /* Artboard point -> pixel position inside an untransformed layer
+       (viewBox "meet" math, so a layer's live transform never leaks in). */
     function toLayer(x, y) {
-      var m = netSvg.getScreenCTM();
-      var r = netL.getBoundingClientRect();
-      if (!m) return { x: 0, y: 0 };
-      return { x: m.a * x + m.c * y + m.e - r.left, y: m.b * x + m.d * y + m.f - r.top };
+      var vb = netSvg.viewBox.baseVal, Lw = netL.offsetWidth, Lh = netL.offsetHeight;
+      var k = Math.min(Lw / vb.width, Lh / vb.height);
+      return { x: (Lw - vb.width * k) / 2 + (x - vb.x) * k, y: (Lh - vb.height * k) / 2 + (y - vb.y) * k };
     }
-    var SITE_ZOOM = 1.3;
+    var wide = !mobile.matches;
+    var OPEN_ZOOM = wide ? 2.05 : 1.55;      /* close on the RFP          */
+    var SITE_ZOOM = wide ? 1.45 : 1.3;       /* site plan, honeycomb, bldg */
+    var PROOF_ZOOM = wide ? 1.32 : 1;        /* title block               */
     var END_SCALE = 0.04;
-    function siteShift(axis) {
-      var r = netL.getBoundingClientRect();
-      var c = { x: r.width / 2, y: r.height / 2 };
-      var b = toLayer(500, 330);
-      var n = toLayer(nc[0], nc[1]);
-      return n[axis] - c[axis] - END_SCALE * (b[axis] - c[axis]);
+    /* Camera that frames one piece of art so it fills the artwork column:
+       its edges sit on the column edges, so the gap from the copy and the
+       gap to the window edge both equal the page gutter. Measured in
+       artboard units (getBBox, before any tween runs) and mapped with the
+       viewBox math, so the result never depends on a layer's current
+       transform. Phones keep the fixed zooms. */
+    var VB = netSvg.viewBox.baseVal;
+    var boxes = {};
+    function measure(key, el) { if (el) boxes[key] = el.getBBox(); }
+    function frame(key, fallback, fill) {
+      var bb = boxes[key];
+      if (!wide || !bb) return { scale: fallback, x: 0, y: 0 };
+      var Lw = netL.offsetWidth, Lh = netL.offsetHeight;
+      var beats = $('.seq__beats', seq);
+      var side = beats ? beats.getBoundingClientRect().left : 0;      /* page gutter */
+      var k = Math.min(Lw / VB.width, Lh / VB.height);
+      var ox = (Lw - VB.width * k) / 2, oy = (Lh - VB.height * k) / 2;
+      var w = bb.width * k, h = bb.height * k;
+      var ax = ox + (bb.x - VB.x + bb.width / 2) * k, ay = oy + (bb.y - VB.y + bb.height / 2) * k;
+      var sc = Math.min((Lw - 2 * side) / w, (Lh * (fill || 0.8)) / h);
+      return { scale: sc, x: -sc * (ax - Lw / 2), y: -sc * (ay - Lh / 2) };
     }
-    function ncOrigin() { var n = toLayer(nc[0], nc[1]); return n.x + 'px ' + n.y + 'px'; }
+    function cam(key, fallback, fill) {
+      return {
+        scale: function () { return frame(key, fallback, fill).scale; },
+        x: function () { return frame(key, fallback, fill).x; },
+        y: function () { return frame(key, fallback, fill).y; }
+      };
+    }
+    measure('doc', $('.seq-doc__sheet', doc));
+    measure('honey', honey);
+    measure('proof', $('.seq-tb__frame', proof));
+    measure('map', $('.seq-us', mapL));
+    /* The map and its network share one camera (map + net layers). */
+    function mapCam() { return frame('map', 1, 0.78); }
+    function centre() { return { x: netL.offsetWidth / 2, y: netL.offsetHeight / 2 }; }
+    /* Where North Carolina lands on screen once the map camera settles */
+    function ncOnScreen() {
+      var m = mapCam(), c = centre(), n = toLayer(nc[0], nc[1]);
+      return { x: c.x + m.scale * (n.x - c.x) + m.x, y: c.y + m.scale * (n.y - c.y) + m.y };
+    }
+    /* The finished site shrinks onto that spot, at map scale */
+    function siteShift(axis) {
+      var c = centre(), b = toLayer(500, 320), n = ncOnScreen();
+      return n[axis] - c[axis] - END_SCALE * mapCam().scale * (b[axis] - c[axis]);
+    }
+    /* The map starts 1.6x closer, held still on North Carolina */
+    function mapFrom(axis) {
+      var c = centre(), n = toLayer(nc[0], nc[1]), t = ncOnScreen();
+      return t[axis] - c[axis] - 1.6 * mapCam().scale * (n[axis] - c[axis]);
+    }
 
     /* ---- Intro: the solicitation arrives (plays on load) ----------- */
-    gsap.set(siteL, { scale: SITE_ZOOM, transformOrigin: '50% 50%' });
-    var docLines = $$('.seq-doc__title, .seq-doc__meta, .seq-doc__line, .seq-doc__sign', doc);
-    var flagBox = $('.seq-doc__flag-box', doc), flagLines = $$('.seq-doc__flag-line', doc);
-    gsap.fromTo($('.seq-doc__sheet', doc), { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.9, ease: 'expo.out', delay: 0.1 });
-    gsap.fromTo(docLines, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 0.7, ease: 'expo.out', stagger: 0.05, delay: 0.35 });
-    gsap.fromTo(flagBox, { strokeDasharray: 1, strokeDashoffset: 1, fillOpacity: 0 }, { strokeDashoffset: 0, fillOpacity: 1, duration: 1.1, ease: 'power3.inOut', delay: 0.9 });
-    gsap.fromTo(flagLines, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 0.6, ease: 'expo.out', stagger: 0.08, delay: 1.5 });
+    gsap.set([siteL, planL], Object.assign({ transformOrigin: '50% 50%' }, frame('doc', OPEN_ZOOM, 0.8)));
+    /* The RFP lands on its stack, its text sets in line by line, and a
+       highlighter swipe marks the set-aside clause. */
+    var docLines = $('.seq-doc__mono, .seq-doc__mono-mark, .seq-doc__head, .seq-doc__meta, .seq-doc__rule, .seq-doc__h:not(.seq-doc__h--flag), .seq-doc__line, .seq-doc__table, .seq-doc__sign, .seq-doc__caption', doc);
+    var flagBox = $$('.seq-doc__swipe, .seq-doc__swipe-edge', doc), flagLines = $$('.seq-doc__flag-line, .seq-doc__h--flag', doc);
+    gsap.fromTo($$('.seq-doc__shadow, .seq-doc__back', doc), { opacity: 0, y: 14 }, { opacity: function (i, el) { return el.classList.contains('seq-doc__back--2') ? 0.8 : el.classList.contains('seq-doc__back') ? 0.55 : 1; }, y: 0, duration: 1, ease: 'expo.out', stagger: 0.08 });
+    gsap.fromTo($('.seq-doc__sheet', doc), { y: 26, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: 'expo.out', delay: 0.15 });
+    gsap.fromTo(docLines, { scaleX: 0, opacity: 0, transformOrigin: '0% 50%' }, { scaleX: 1, opacity: 1, duration: 0.6, ease: 'expo.out', stagger: 0.025, delay: 0.4 });
+    gsap.fromTo(flagLines, { opacity: 0 }, { opacity: 1, duration: 0.4, stagger: 0.06, delay: 1.1 });
+    gsap.fromTo(flagBox, { scaleX: 0, transformOrigin: '0% 50%' }, { scaleX: 1, duration: 0.9, ease: 'power3.inOut', delay: 1.35 });
     gsap.from($$('.seq__kicker, .seq__sub', B.open), { y: 16, opacity: 0, duration: 0.8, ease: 'expo.out', stagger: 0.1, delay: 0.35 });
 
     var tl = gsap.timeline({ defaults: { ease: 'none' } });
@@ -530,57 +576,67 @@
     /* 10-28 MOBILIZE: the paper opens into a technical site plan */
     tl.to([docLines, flagBox, flagLines], { opacity: 0, duration: 1.6 }, 8.5);
     tl.to(doc, { scale: 1.12, opacity: 0, svgOrigin: '500 300', duration: 3, ease: 'power2.inOut' }, 9);
+    tl.fromTo([siteL, planL], cam('doc', OPEN_ZOOM, 0.8), Object.assign({ duration: 5, ease: 'power3.inOut', immediateRender: false }, cam('honey', SITE_ZOOM, 0.9)), 8.5);
     tl.set(plan, { opacity: 1 }, 10);
     tl.fromTo(gridLines, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 2.6, stagger: 0.05, ease: 'power2.inOut' }, 10.2);
-    tl.fromTo(foot, { strokeDashoffset: 1, fillOpacity: 0 }, { strokeDashoffset: 0, fillOpacity: 1, duration: 2.6, ease: 'power2.inOut' }, 13);
+    /* The honeycomb outline draws, then its hatch fills in */
+    tl.fromTo($('.seq-plan__foot', foot), { strokeDashoffset: 1, fillOpacity: 0 }, { strokeDashoffset: 0, fillOpacity: 1, duration: 2.6, ease: 'power2.inOut' }, 13);
+    tl.fromTo($('.seq-plan__hatch', foot), { opacity: 0 }, { opacity: 1, duration: 1.6 }, 14.6);
     tl.fromTo(annot, { opacity: 0 }, { opacity: 1, duration: 2 }, 14.5);
     inBeat(B.mobilize, 12);
     tl.set(markers, { opacity: 1 }, 18);
-    tl.fromTo(markerEls, { y: -50, opacity: 0 }, { y: 0, opacity: 1, duration: 2, stagger: 0.8, ease: 'back.out(2.2)' }, 18);
+    tl.fromTo(markerEls, { y: -50, opacity: 0 }, { y: 0, opacity: 1, duration: 1.8, stagger: 0.6, ease: 'back.out(2.2)' }, 18);
 
-    /* 28-58 EXECUTE: the building rises floor by floor */
+    /* 28-58 EXECUTE: each capability floats in as a charged ion and
+       bonds into a honeycomb around the Ionic mark; the honeycomb then
+       holds as the finished deliverable for close out. */
     outBeat(B.mobilize, 26);
     tl.to(markers, { opacity: 0, duration: 2.5 }, 27);
     tl.to(annot, { opacity: 0, duration: 2 }, 27);
-    tl.to(plan, { opacity: 0.45, duration: 3 }, 28);
+    /* The blueprint steps aside fully (no repaint cost under the ions) */
+    tl.to(planL, { autoAlpha: 0, duration: 2.5 }, 28);
+    tl.fromTo(netL, { opacity: 0.001 }, { opacity: 1, duration: 1 }, 29);
     inBeat(B.execute, 29.5);
-    tl.set(building, { opacity: 1 }, 30.5);
-    tl.set(callout, { opacity: 1, y: floorY[0] }, 31);
-    floors.forEach(function (fl, i) {
-      var at = 31 + i * 5;
-      var faces = $$('.seq-face', fl), wins = $$('.seq-win', fl), rest = $$('.seq-slab, .seq-canopy', fl);
-      tl.fromTo(fl, { opacity: 0, y: 16 }, { opacity: 1, y: 0, duration: 1.4, ease: 'power3.out' }, at);
-      tl.fromTo(faces, { strokeDashoffset: 1, fillOpacity: 0 }, { strokeDashoffset: 0, duration: 1.6, ease: 'power2.inOut' }, at);
-      tl.to(faces, { fillOpacity: 1, duration: 1.2 }, at + 1.3);
-      tl.fromTo(wins, { opacity: 0 }, { opacity: 1, duration: 0.5, stagger: 0.04 }, at + 1.8);
-      tl.fromTo(rest, { opacity: 0 }, { opacity: 1, duration: 0.8 }, at + 1.2);
-      if (i > 0) tl.to(callout, { y: floorY[i], duration: 1.2, ease: 'power2.inOut' }, at + 0.4);
+    tl.set(honey, { opacity: 1 }, 30);
+    tl.fromTo(core, { scale: 0.6, opacity: 0, svgOrigin: '500 320' }, { scale: 1, opacity: 1, duration: 2, ease: 'back.out(1.8)' }, 30.5);
+    var halo = $('.seq-ion__halo', honey);
+    if (halo) tl.fromTo(halo, { opacity: 0, scale: 1.25, svgOrigin: '500 320' }, { opacity: 1, scale: 1, duration: 2.4, ease: 'power3.out' }, 31);
+    ions.forEach(function (ion, i) {
+      var at = 33 + i * 3.2;
+      var x = +ion.getAttribute('data-x') - 500, y = +ion.getAttribute('data-y') - 320;
+      var charge = $('.seq-ion__charge', ion), orbit = $('.seq-ion__orbit', ion);
+      /* Start far out along the cell's own bearing, drifting and turned */
+      var jx = (i % 2 ? 1 : -1) * 60, jy = (i % 3 - 1) * 50;
+      tl.fromTo(ion, { x: x * 1.4 + jx, y: y * 1.4 + jy, rotation: (i % 2 ? 40 : -40), scale: 0.55, opacity: 0, transformOrigin: '50% 50%' },
+        { x: 0, y: 0, rotation: 0, scale: 1, opacity: 1, duration: 2.4, ease: 'power3.out' }, at);
+      tl.fromTo(charge, { opacity: 0 }, { opacity: 1, duration: 0.4 }, at);
+      tl.to(charge, { opacity: 0, duration: 0.8 }, at + 2.6);
+      tl.fromTo(orbit, { opacity: 0, rotation: -24, transformOrigin: '50% 50%' }, { opacity: 1, rotation: 96, duration: 2.4, ease: 'power2.out' }, at);
+      tl.to(orbit, { opacity: 0, duration: 0.7 }, at + 2.3);
     });
-    if (roof) tl.fromTo(roof, { opacity: 0, y: -12 }, { opacity: 1, y: 0, duration: 1.6, ease: 'power3.out' }, 55.5);
-
-    /* 58-72 CLOSE OUT: one orange trace, then dusk; the lights come on */
+    /* 58-72 CLOSE OUT: one orange trace around the honeycomb, then each
+       cell lights up as it is handed over */
     outBeat(B.execute, 57);
-    tl.to(callout, { opacity: 0, duration: 2 }, 58);
     tl.set(outline, { opacity: 1 }, 59);
     tl.fromTo(outline, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 5, ease: 'power1.inOut' }, 59);
     inBeat(B.closeout, 60);
     tl.to(outline, { opacity: 0, duration: 2 }, 64.5);
-    tl.to(plan, { opacity: 0.22, duration: 3 }, 64);
     tl.fromTo(dusk, { opacity: 0 }, { opacity: 1, duration: 3.5 }, 64.5);
-    tl.to(litWins, { fill: '#F4DDB2', stroke: '#F4DDB2', duration: 0.5, stagger: { each: 0.07, from: 'random' } }, 65.5);
+    tl.fromTo(litCells, { opacity: 0 }, { opacity: 1, duration: 1, stagger: 0.45, ease: 'power2.out' }, 65.2);
 
     /* 72-86 FOOTPRINT: pull back; the site shrinks onto North Carolina */
     outBeat(B.closeout, 70.5);
     tl.to(siteL, {
-      scale: END_SCALE,
+      scale: function () { return END_SCALE * mapCam().scale; },
       x: function () { return siteShift('x'); },
       y: function () { return siteShift('y'); },
       duration: 6.5, ease: 'power3.inOut'
     }, 72);
     tl.to(siteL, { opacity: 0, duration: 1.5 }, 77);
-    tl.fromTo(mapL, { opacity: 0.001, scale: 1.6, transformOrigin: ncOrigin },
-      { opacity: 1, scale: 1, duration: 6.5, ease: 'power3.inOut' }, 72);
-    tl.fromTo(netL, { opacity: 0.001 }, { opacity: 1, duration: 0.5 }, 76);
+    tl.fromTo(mapL, { opacity: 0.001, scale: function () { return 1.6 * mapCam().scale; }, x: function () { return mapFrom('x'); }, y: function () { return mapFrom('y'); }, transformOrigin: '50% 50%' },
+      { opacity: 1, scale: function () { return mapCam().scale; }, x: function () { return mapCam().x; }, y: function () { return mapCam().y; }, duration: 6.5, ease: 'power3.inOut' }, 72);
+    tl.set(netL, { scale: function () { return mapCam().scale; }, x: function () { return mapCam().x; }, y: function () { return mapCam().y; }, transformOrigin: '50% 50%' }, 72);
+    tl.fromTo(net, { opacity: 0 }, { opacity: 1, duration: 0.5 }, 76);
     inBeat(B.footprint, 74);
     ['nc', 'tx', 'fl'].forEach(function (id, i) {
       var h = hub(id);
@@ -599,6 +655,7 @@
     tl.to(mapL, { opacity: 0.001, duration: 2.5 }, 86);
     tl.to(net, { opacity: 0, duration: 2 }, 86);
     tl.set(proof, { opacity: 1 }, 86.5);
+    tl.fromTo(netL, { scale: function () { return mapCam().scale; }, x: function () { return mapCam().x; }, y: function () { return mapCam().y; }, transformOrigin: '50% 50%' }, Object.assign({ duration: 3, ease: 'power3.inOut' }, cam('proof', PROOF_ZOOM, 0.62)), 86);
     tl.fromTo($('.seq-tb__frame', proof), { strokeDashoffset: 1, fillOpacity: 0 }, { strokeDashoffset: 0, fillOpacity: 1, duration: 1.4, ease: 'power2.inOut' }, 86.5);
     tl.fromTo($('.seq-tb__head', proof), { opacity: 0 }, { opacity: 1, duration: 0.8 }, 87.2);
     tl.fromTo(tbRowsEls, { opacity: 0 }, { opacity: 0.4, duration: 0.8, stagger: 0.08 }, 87.2);
@@ -638,7 +695,7 @@
         seq.setAttribute('data-light', b === order.length - 1 ? 'true' : 'false');
         lastBeat = b;
       }
-      var ci = P < 31 ? -1 : P >= 57 ? caps.length : clamp(Math.floor((P - 31) / 5), 0, caps.length - 1);
+      var ci = P < 33 ? -1 : P >= 52 ? caps.length : clamp(Math.floor((P - 33) / 3.2), 0, caps.length - 1);
       if (ci !== lastCap) { mark(caps, ci); lastCap = ci; }
       var pi = P < 88 ? -1 : P >= 95.2 ? proofs.length : clamp(Math.floor(P - 88), 0, proofs.length - 1);
       if (pi !== lastProof) { mark(proofs, pi); lastProof = pi; }

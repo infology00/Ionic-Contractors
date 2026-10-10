@@ -1,5 +1,5 @@
 ===============================================================================
-IONIC CONTRACTORS - WEBSITE  (V7)
+IONIC CONTRACTORS - WEBSITE  (V13)
 Veteran-owned SDVOSB general contractor · federal, state & local, private
 ===============================================================================
 
@@ -118,8 +118,9 @@ Built in code (SVG + GSAP ScrollTrigger), no video.
   0-10%    Contract    the solicitation arrives; one key line is lit
   10-28%   Mobilize    it opens into a site plan: drafting grid, footprint,
                        dimensions, grid bubbles, north arrow, staging markers
-  28-58%   Execute     an isometric building rises floor by floor, one floor
-                       per capability line, wireframe first, then glass
+  28-58%   Execute     capabilities float in as ion hexes and bond into a
+                       honeycomb around the Ionic mark, then condense
+                       into the building
   58-72%   Close out   one orange trace around it; dusk falls and the
                        windows light up warm: it is handed over and in use
   72-86%   Footprint   pull back to a dot-matrix US map: NC, TX, FL, partners
